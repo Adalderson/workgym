@@ -1,0 +1,271 @@
+{
+  "generated": "2026-11-22",
+  "mode": "home",
+  "block": {
+    "start": "2026-11-27",
+    "end": "2026-12-10",
+    "note": "Home bodyweight block. No lunges/split squats. Rests cut 25s vs built-in home plan (60->35, 45->20). Progression: Week 2 adds a set to the first two moves of each day plus more reps, slower tempo, and pauses."
+  },
+  "warmUp": "Built into the app (Quick Warm-Up card). At home, swap the face pulls for arm circles.",
+  "finisher": "Built into the app for Home mode: optional 5–8 min mountain climbers, high knees, or jumping jacks.",
+  "days": [
+    {
+      "key": "W1-A",
+      "name": "Week 1 – Home A: Glutes + Quads + Abs (Fri 11/27)",
+      "type": "Glute/Quad",
+      "exercises": [
+        {
+          "name": "Bodyweight Squats (slow tempo)",
+          "sets": 3,
+          "reps": "15-20 • 3s down",
+          "rest": 35
+        },
+        {
+          "name": "Hip Thrusts (shoulders elevated)",
+          "sets": 3,
+          "reps": "15-20 • 1s squeeze",
+          "rest": 35
+        },
+        {
+          "name": "Wall Sit",
+          "sets": 3,
+          "reps": "30-40s",
+          "rest": 35
+        },
+        {
+          "name": "Single-Leg Glute Bridge",
+          "sets": 3,
+          "reps": "10/leg",
+          "rest": 20
+        },
+        {
+          "name": "Side-Lying Hip Abduction",
+          "sets": 3,
+          "reps": "15/side",
+          "rest": 20
+        },
+        {
+          "name": "Plank",
+          "sets": 3,
+          "reps": "40s",
+          "rest": 20
+        }
+      ]
+    },
+    {
+      "key": "W1-B",
+      "name": "Week 1 – Home B: Back + Chest + Abs (Sun 11/29)",
+      "type": "Back/Chest",
+      "exercises": [
+        {
+          "name": "Push-ups (pause at bottom)",
+          "sets": 3,
+          "reps": "8-12 • 1s pause",
+          "rest": 35
+        },
+        {
+          "name": "Door Frame Rows",
+          "sets": 3,
+          "reps": "12-15 • 2s squeeze",
+          "rest": 35
+        },
+        {
+          "name": "Incline Push-ups (hands elevated)",
+          "sets": 3,
+          "reps": "15-20",
+          "rest": 35
+        },
+        {
+          "name": "Reverse Snow Angels",
+          "sets": 3,
+          "reps": "10-12",
+          "rest": 20
+        },
+        {
+          "name": "Superman Holds",
+          "sets": 3,
+          "reps": "12-15",
+          "rest": 20
+        },
+        {
+          "name": "Plank Shoulder Taps",
+          "sets": 3,
+          "reps": "10/side",
+          "rest": 20
+        }
+      ]
+    },
+    {
+      "key": "W1-C",
+      "name": "Week 1 – Home C: Glutes + Hams + Abs (Tue 12/1)",
+      "type": "Glute/Ham",
+      "exercises": [
+        {
+          "name": "Feet-Elevated Glute Bridge",
+          "sets": 3,
+          "reps": "12-15 • 1s squeeze",
+          "rest": 35
+        },
+        {
+          "name": "Single-Leg RDL (bodyweight)",
+          "sets": 3,
+          "reps": "10/leg • 3s down",
+          "rest": 35
+        },
+        {
+          "name": "Glute Bridge Walkouts",
+          "sets": 3,
+          "reps": "8-10",
+          "rest": 20
+        },
+        {
+          "name": "Frog Pumps",
+          "sets": 3,
+          "reps": "25",
+          "rest": 20
+        },
+        {
+          "name": "Glute Bridge March",
+          "sets": 3,
+          "reps": "12/leg",
+          "rest": 20
+        },
+        {
+          "name": "Side Plank",
+          "sets": 3,
+          "reps": "30s/side",
+          "rest": 20
+        }
+      ]
+    },
+    {
+      "key": "W2-A",
+      "name": "Week 2 – Home A: Glutes + Quads + Abs (Fri 12/4)",
+      "type": "Glute/Quad",
+      "exercises": [
+        {
+          "name": "Bodyweight Squats (slow tempo)",
+          "sets": 4,
+          "reps": "15-20 • 4s down, 1s pause",
+          "rest": 35
+        },
+        {
+          "name": "Hip Thrusts (shoulders elevated)",
+          "sets": 4,
+          "reps": "15-20 • 2s squeeze",
+          "rest": 35
+        },
+        {
+          "name": "Wall Sit",
+          "sets": 3,
+          "reps": "45-60s",
+          "rest": 35
+        },
+        {
+          "name": "Single-Leg Glute Bridge",
+          "sets": 3,
+          "reps": "12/leg • 2s hold",
+          "rest": 20
+        },
+        {
+          "name": "Side-Lying Hip Abduction",
+          "sets": 3,
+          "reps": "20/side • 1s hold",
+          "rest": 20
+        },
+        {
+          "name": "Plank",
+          "sets": 3,
+          "reps": "50s",
+          "rest": 20
+        }
+      ]
+    },
+    {
+      "key": "W2-B",
+      "name": "Week 2 – Home B: Back + Chest + Abs (Sun 12/6)",
+      "type": "Back/Chest",
+      "exercises": [
+        {
+          "name": "Push-ups (pause at bottom)",
+          "sets": 4,
+          "reps": "10-15 • 2s pause",
+          "rest": 35
+        },
+        {
+          "name": "Door Frame Rows",
+          "sets": 4,
+          "reps": "15-20 • 2s squeeze, 3s lower",
+          "rest": 35
+        },
+        {
+          "name": "Incline Push-ups (hands elevated)",
+          "sets": 3,
+          "reps": "15-20 • 3s down",
+          "rest": 35
+        },
+        {
+          "name": "Reverse Snow Angels",
+          "sets": 3,
+          "reps": "12-15 • 1s hold at top",
+          "rest": 20
+        },
+        {
+          "name": "Superman Holds",
+          "sets": 3,
+          "reps": "12-15 • 3s hold",
+          "rest": 20
+        },
+        {
+          "name": "Plank Shoulder Taps",
+          "sets": 3,
+          "reps": "14/side",
+          "rest": 20
+        }
+      ]
+    },
+    {
+      "key": "W2-C",
+      "name": "Week 2 – Home C: Glutes + Hams + Abs (Tue 12/8)",
+      "type": "Glute/Ham",
+      "exercises": [
+        {
+          "name": "Feet-Elevated Glute Bridge",
+          "sets": 4,
+          "reps": "15-20 • 2s squeeze",
+          "rest": 35
+        },
+        {
+          "name": "Single-Leg RDL (bodyweight)",
+          "sets": 4,
+          "reps": "12/leg • 3s down, 1s pause",
+          "rest": 35
+        },
+        {
+          "name": "Glute Bridge Walkouts",
+          "sets": 3,
+          "reps": "10-12",
+          "rest": 20
+        },
+        {
+          "name": "Frog Pumps",
+          "sets": 3,
+          "reps": "30 • 1s squeeze",
+          "rest": 20
+        },
+        {
+          "name": "Glute Bridge March",
+          "sets": 3,
+          "reps": "15/leg",
+          "rest": 20
+        },
+        {
+          "name": "Side Plank",
+          "sets": 3,
+          "reps": "40s/side",
+          "rest": 20
+        }
+      ]
+    }
+  ]
+}

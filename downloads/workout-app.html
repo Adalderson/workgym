@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Work Gym">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#00d4aa">
+<title>Work Gym</title>
+<style>
+  :root { --bg:#0f1419; --card:#1a2332; --accent:#00d4aa; --accent2:#0099ff; --text:#e8eef4; --muted:#8b9bb4; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:12px; max-width:480px; margin:0 auto; }
+  header { text-align:center; padding:10px 0 6px; }
+  h1 { font-size:1.4rem; font-weight:700; }
+  .subtitle { color:var(--muted); font-size:0.8rem; }
+  .top-actions { display:flex; gap:8px; margin:10px 0; flex-wrap:wrap; }
+  .top-actions button { flex:1; min-width:100px; padding:11px 6px; border:none; border-radius:10px; background:var(--card); color:var(--text); font-weight:600; font-size:0.82rem; cursor:pointer; }
+  .top-actions button.primary { background:var(--accent); color:#000; }
+  .day-selector { display:flex; gap:6px; margin:8px 0; flex-wrap:wrap; }
+  .day-btn { flex:1; min-width:85px; padding:11px 4px; border:none; border-radius:10px; background:var(--card); color:var(--text); font-weight:600; font-size:0.8rem; cursor:pointer; }
+  .day-btn.active { background:var(--accent); color:#000; }
+  .exercise-list,.plan-view,.import-view,.history-view,.export-view { display:none; }
+  .exercise-list.active,.plan-view.active,.import-view.active,.history-view.active,.export-view.active { display:block; }
+  .goal-line { font-size:0.8rem; color:#ffd166; margin-top:4px; }
+  .note-line { font-size:0.76rem; color:#c9b8ff; margin-top:3px; }
+  .export-actions { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0; }
+  .export-actions button { flex:1; min-width:120px; padding:12px 6px; border:none; border-radius:10px; font-weight:700; font-size:0.85rem; cursor:pointer; background:var(--card); color:var(--text); }
+  .export-actions button.primary { background:var(--accent); color:#000; }
+  .export-status { font-size:0.8rem; color:var(--accent); min-height:1.1em; margin:4px 0; }
+  .hist-ex { font-size:0.78rem; color:var(--muted); margin-top:2px; }
+  .timer-panel { display:none; background:var(--card); border-radius:14px; padding:12px 10px; margin:6px 0 10px; }
+  .timer-panel.active { display:block; }
+  .timer-phase { font-size:0.9rem; font-weight:700; color:var(--muted); min-height:1.2em; letter-spacing:0.5px; }
+  .timer-time { font-size:5.4rem; font-weight:800; color:#ffd166; line-height:1; margin:6px 0; font-variant-numeric:tabular-nums; }
+  .timer-panel.running .timer-time { color:var(--accent); }
+  .timer-panel.getready .timer-time { color:#ff9f43; }
+  .timer-btns { display:flex; gap:8px; margin-top:6px; }
+  .timer-btns button { flex:1; padding:12px 4px; border:none; border-radius:10px; font-weight:700; font-size:0.95rem; background:#2a3545; color:var(--text); cursor:pointer; }
+  .timer-btns button.start { flex:2.2; background:var(--accent); color:#000; font-size:1.25rem; padding:16px 4px; }
+  .timer-opts { font-size:0.8rem; color:var(--muted); margin-top:8px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+  .timer-opts input { margin-right:4px; transform:scale(1.15); }
+  .ex-card { background:var(--card); border-radius:12px; padding:12px; margin-bottom:8px; cursor:pointer; border:2px solid transparent; }
+  .ex-name { font-weight:600; }
+  .ex-meta { color:var(--muted); font-size:0.78rem; margin-top:2px; }
+  .workout-view { display:none; text-align:center; }
+  .workout-view.active { display:block; }
+  .current-ex { font-size:1.2rem; font-weight:700; margin:6px 0 4px; }
+  .set-info { color:var(--muted); margin-bottom:8px; }
+  .rep-display { font-size:4.8rem; font-weight:800; color:var(--accent); line-height:1; margin:6px 0; }
+  .target { color:var(--muted); margin-bottom:10px; }
+  .weight-row { display:flex; gap:8px; align-items:center; justify-content:center; margin:8px 0 12px; }
+  .weight-row input { width:90px; padding:10px; border:none; border-radius:8px; background:#2a3545; color:var(--text); font-size:1.1rem; text-align:center; }
+  .btn-row { display:flex; gap:10px; margin:12px 0; }
+  button.big { flex:1; padding:15px; border:none; border-radius:12px; font-size:1.05rem; font-weight:700; cursor:pointer; }
+  .btn-rep { background:var(--accent2); color:#fff; }
+  .btn-done { background:var(--accent); color:#000; }
+  .btn-skip,.btn-secondary { background:var(--card); color:var(--text); padding:10px 14px; border-radius:10px; border:none; margin-top:8px; }
+  .rest-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.94); z-index:100; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; }
+  .rest-overlay.active { display:flex; }
+  .rest-time { font-size:5.2rem; font-weight:800; color:var(--accent); }
+  .progress-bar { height:6px; background:#2a3545; border-radius:3px; margin:10px 0; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--accent); width:0%; transition:width 0.3s; }
+  .timer-bar { font-size:0.85rem; color:var(--muted); margin-top:6px; }
+  .summary { display:none; text-align:center; padding:20px 10px; }
+  .summary.active { display:block; }
+  textarea { width:100%; height:140px; background:var(--card); color:var(--text); border:none; border-radius:10px; padding:10px; font-family:monospace; font-size:0.75rem; margin:8px 0; }
+  .plan-item,.hist-item { background:var(--card); border-radius:10px; padding:10px; margin-bottom:6px; font-size:0.88rem; text-align:left; }
+  footer { text-align:center; color:var(--muted); font-size:0.7rem; margin-top:16px; padding-bottom:12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Work Gym</h1>
+  <div class="subtitle">Definition Cut • 215 → 195-200</div>
+</header>
+
+<div class="top-actions">
+  <button id="btnModeGym" class="primary">Gym Plan</button>
+  <button id="btnModeHome">Home Bodyweight</button>
+  <button id="btnGenerate">New 2-Week Plan</button>
+  <button id="btnImport">Import</button>
+  <button id="btnPlan">View Plan</button>
+  <button id="btnHistory">History</button>
+  <button id="btnExport">Export</button>
+</div>
+
+<div id="planView" class="plan-view"></div>
+<div id="historyView" class="history-view"></div>
+<div id="exportView" class="export-view">
+  <h3 style="margin:6px 0">Export for your coach</h3>
+  <p style="font-size:0.8rem;color:var(--muted);margin-bottom:4px">Includes your full workout history (every set: exercise, weight, reps, date, day), current plan and mode.</p>
+  <div class="export-actions">
+    <button class="primary" id="exportShare">Share File</button>
+    <button id="exportDownload">Download</button>
+    <button id="exportCopy">Copy to Clipboard</button>
+  </div>
+  <div class="export-status" id="exportStatus"></div>
+  <textarea id="exportText" readonly style="height:220px"></textarea>
+  <button class="btn-secondary" id="closeExport" style="width:100%">Close</button>
+</div>
+<div id="importView" class="import-view">
+  <p style="margin-bottom:6px;font-size:0.88rem;">Paste JSON plan from your coach (or a Work Gym export file to restore a backup):</p>
+  <textarea id="importText" placeholder='{"days":[...]}'></textarea>
+  <button class="big btn-done" id="doImport">Import</button>
+  <button class="btn-secondary" id="cancelImport">Cancel</button>
+</div>
+
+<div class="day-selector" id="daySelector"></div>
+<div id="exerciseList" class="exercise-list"></div>
+
+<div id="workoutView" class="workout-view">
+  <div class="current-ex" id="currentExName"></div>
+  <div class="set-info" id="setInfo"></div>
+  <div class="rep-display" id="repDisplay">0</div>
+  <div class="target" id="targetReps"></div>
+  <div class="timer-panel" id="timerPanel">
+    <div class="timer-phase" id="timerPhase">Timed hold</div>
+    <div class="timer-time" id="timerTime">0:40</div>
+    <div class="timer-btns">
+      <button id="timerMinus">−5s</button>
+      <button class="start" id="timerStart">Start</button>
+      <button id="timerPlus">+5s</button>
+    </div>
+    <div class="timer-btns">
+      <button id="timerReset">Reset</button>
+    </div>
+    <div class="timer-opts">
+      <label><input type="checkbox" id="timerGetReady" checked>3-s get ready</label>
+      <label id="timerSidesWrap"><input type="checkbox" id="timerBothSides" checked>Auto 2nd side</label>
+    </div>
+  </div>
+  <div class="weight-row">
+    <label>Weight (lbs, optional):</label>
+    <input type="number" id="weightInput" placeholder="0" step="2.5" min="0">
+  </div>
+  <div id="lastWeightNote" style="font-size:0.78rem;color:var(--muted);margin-bottom:8px;"></div>
+  <div class="progress-bar"><div class="progress-fill" id="setProgress"></div></div>
+  <div class="btn-row">
+    <button class="big btn-rep" id="addRep">+1 Rep</button>
+    <button class="big btn-done" id="doneSet">Done Set</button>
+  </div>
+  <button class="btn-skip" id="endWorkout">End Workout</button>
+  <div class="timer-bar" id="sessionTimer">Session: 0:00</div>
+</div>
+
+<div id="restOverlay" class="rest-overlay">
+  <div style="font-size:1.1rem;margin-bottom:8px">Rest</div>
+  <div class="rest-time" id="restTime">75</div>
+  <button class="big btn-done" id="skipRest" style="margin-top:14px;max-width:160px">Skip Rest</button>
+</div>
+
+<div id="summary" class="summary">
+  <h2>Done!</h2>
+  <p id="summaryText"></p>
+  <button class="big btn-done" id="backHome" style="margin-top:14px">Back</button>
+</div>
+
+<footer>Gym or Home • Form cues included • Definition cut • State persists • v2.1 (export + goals + hold timer)</footer>
+
+<script>
+// Definition-focused total-body plans (muscle retention + fat loss while cutting from 215 toward 195-200).
+// Gym uses available equipment; Home is pure bodyweight.
+const gymPlan = {
+  generated: "2026-11-18",
+  mode: "gym",
+  days: [
+    { key: "W1-A", name: "Week 1 – Total Body A (Gym)", type: "A", exercises: [
+      { name: "Goblet Squat or Leg Press", sets: 3, reps: "10-12", rest: 75 },
+      { name: "Dumbbell Bench Press", sets: 3, reps: "8-12", rest: 75 },
+      { name: "Lat Pulldown or Assisted Pull-up", sets: 3, reps: "10-12", rest: 75 },
+      { name: "Romanian Deadlift (DB)", sets: 3, reps: "8-12", rest: 75 },
+      { name: "Dumbbell Shoulder Press", sets: 3, reps: "10-12", rest: 60 },
+      { name: "Cable Face Pulls + optional StairMaster 5-8 min", sets: 3, reps: "12-15", rest: 45 }
+    ]},
+    { key: "W1-B", name: "Week 1 – Total Body B (Gym)", type: "B", exercises: [
+      { name: "Leg Press (glute focus) or Goblet Squat", sets: 3, reps: "10-12", rest: 75 },
+      { name: "Incline Dumbbell Press", sets: 3, reps: "10-12", rest: 75 },
+      { name: "Seated Cable Row", sets: 3, reps: "10-12", rest: 75 },
+      { name: "Leg Curl", sets: 3, reps: "12-15", rest: 60 },
+      { name: "Single-Arm Cable Row", sets: 3, reps: "12/side", rest: 60 },
+      { name: "Plank or Cable Woodchop", sets: 3, reps: "40-50s", rest: 45 }
+    ]},
+    { key: "W1-C", name: "Week 1 – Total Body C (Gym)", type: "C", exercises: [
+      { name: "Goblet Squat", sets: 3, reps: "10-12", rest: 75 },
+      { name: "Flat or Machine Chest Press", sets: 3, reps: "10-12", rest: 75 },
+      { name: "Wide-Grip Lat Pulldown", sets: 3, reps: "10-12", rest: 75 },
+      { name: "Dumbbell Romanian Deadlift", sets: 3, reps: "10-12", rest: 75 },
+      { name: "Lateral Raises", sets: 3, reps: "12-15", rest: 45 },
+      { name: "Core finisher (Woodchop or Plank)", sets: 3, reps: "12 or 40s", rest: 45 }
+    ]},
+    { key: "W2-A", name: "Week 2 – Total Body A (Gym)", type: "A", exercises: [
+      { name: "Leg Press or Goblet Squat", sets: 3, reps: "10-15", rest: 75 },
+      { name: "Dumbbell Bench Press", sets: 3, reps: "8-12", rest: 75 },
+      { name: "Lat Pulldown (Gravitron optional)", sets: 3, reps: "10-12", rest: 75 },
+      { name: "Romanian Deadlift (DB)", sets: 3, reps: "10-12", rest: 75 },
+      { name: "Seated Dumbbell Shoulder Press", sets: 3, reps: "10-12", rest: 60 },
+      { name: "Face Pulls + light StairMaster", sets: 3, reps: "12-15", rest: 45 }
+    ]},
+    { key: "W2-B", name: "Week 2 – Total Body B (Gym)", type: "B", exercises: [
+      { name: "Leg Press or Hip Thrust (bench + DB)", sets: 3, reps: "10-12", rest: 75 },
+      { name: "Incline DB Press", sets: 3, reps: "10-12", rest: 75 },
+      { name: "Chest-Supported or Seated Row", sets: 3, reps: "10-12", rest: 75 },
+      { name: "Leg Curl Machine", sets: 3, reps: "12-15", rest: 60 },
+      { name: "Single-Arm Dumbbell Row", sets: 3, reps: "12/side", rest: 60 },
+      { name: "Side Plank or Cable Anti-Rotation", sets: 3, reps: "25-35s/side", rest: 45 }
+    ]},
+    { key: "W2-C", name: "Week 2 – Total Body C (Gym)", type: "C", exercises: [
+      { name: "Goblet or Barbell Squat", sets: 3, reps: "8-12", rest: 75 },
+      { name: "Dumbbell Bench Press", sets: 3, reps: "10-12", rest: 75 },
+      { name: "Assisted Pull-ups or Lat Pulldown", sets: 3, reps: "8-12", rest: 75 },
+      { name: "DB Romanian Deadlift", sets: 3, reps: "10-12", rest: 75 },
+      { name: "Overhead Press (DB or Machine)", sets: 3, reps: "10-12", rest: 60 },
+      { name: "Core finisher + optional 5-10 min StairMaster", sets: 3, reps: "12 or 40s", rest: 45 }
+    ]}
+  ]
+};
+
+const homePlan = {
+  generated: "2026-11-18",
+  mode: "home",
+  days: [
+    { key: "W1-A", name: "Week 1 – Home Total Body A", type: "A", exercises: [
+      { name: "Bodyweight Squats", sets: 3, reps: "15-20", rest: 60 },
+      { name: "Push-ups (knees or full)", sets: 3, reps: "8-15", rest: 60 },
+      { name: "Glute Bridges or Single-Leg Glute Bridge", sets: 3, reps: "12-15", rest: 45 },
+      { name: "Glute Bridges", sets: 3, reps: "15-20", rest: 45 },
+      { name: "Superman or Back Extensions", sets: 3, reps: "12-15", rest: 45 },
+      { name: "Plank", sets: 3, reps: "30-45s", rest: 45 }
+    ]},
+    { key: "W1-B", name: "Week 1 – Home Total Body B", type: "B", exercises: [
+      { name: "Single-Leg Glute Bridge or Hip Thrust", sets: 3, reps: "10/leg", rest: 45 },
+      { name: "Incline Push-ups (hands elevated)", sets: 3, reps: "10-15", rest: 60 },
+      { name: "Single-Leg Glute Bridge", sets: 3, reps: "10/leg", rest: 45 },
+      { name: "Pike Push-ups or Decline Push-ups", sets: 3, reps: "6-12", rest: 60 },
+      { name: "Bird Dogs", sets: 3, reps: "10/side", rest: 45 },
+      { name: "Side Plank", sets: 3, reps: "20-30s/side", rest: 45 }
+    ]},
+    { key: "W1-C", name: "Week 1 – Home Total Body C", type: "C", exercises: [
+      { name: "Squat Jumps or Tempo Squats", sets: 3, reps: "12-15", rest: 60 },
+      { name: "Push-ups", sets: 3, reps: "max or 10-15", rest: 60 },
+      { name: "Bulgarian Split Squats (optional) or Glute Bridge", sets: 3, reps: "8-12/leg", rest: 60 },
+      { name: "Glute Bridge March", sets: 3, reps: "12/leg", rest: 45 },
+      { name: "Mountain Climbers", sets: 3, reps: "20-30", rest: 45 },
+      { name: "Dead Bug or Plank", sets: 3, reps: "10/side or 40s", rest: 45 }
+    ]},
+    { key: "W2-A", name: "Week 2 – Home Total Body A", type: "A", exercises: [
+      { name: "Bodyweight Squats (slow tempo)", sets: 3, reps: "15-20", rest: 60 },
+      { name: "Push-ups", sets: 3, reps: "8-15", rest: 60 },
+      { name: "Glute Bridges or Single-Leg Bridges", sets: 3, reps: "12-15", rest: 45 },
+      { name: "Single-Leg Glute Bridges", sets: 3, reps: "10/leg", rest: 45 },
+      { name: "Superman Holds", sets: 3, reps: "12-15", rest: 45 },
+      { name: "Plank", sets: 3, reps: "40-50s", rest: 45 }
+    ]},
+    { key: "W2-B", name: "Week 2 – Home Total Body B", type: "B", exercises: [
+      { name: "Hip Thrusts or Single-Leg Glute Bridge", sets: 3, reps: "12-15", rest: 45 },
+      { name: "Decline or Regular Push-ups", sets: 3, reps: "8-15", rest: 60 },
+      { name: "Hip Thrusts (shoulders elevated)", sets: 3, reps: "15-20", rest: 45 },
+      { name: "Pike Push-ups", sets: 3, reps: "6-12", rest: 60 },
+      { name: "Bird Dogs", sets: 3, reps: "12/side", rest: 45 },
+      { name: "Side Plank", sets: 3, reps: "25-35s/side", rest: 45 }
+    ]},
+    { key: "W2-C", name: "Week 2 – Home Total Body C", type: "C", exercises: [
+      { name: "Squat to Calf Raise", sets: 3, reps: "12-15", rest: 60 },
+      { name: "Push-ups (pause at bottom)", sets: 3, reps: "8-12", rest: 60 },
+      { name: "Glute Bridges or Single-Leg Glute Bridge", sets: 3, reps: "12-15", rest: 45 },
+      { name: "Glute Bridges", sets: 3, reps: "15-20", rest: 45 },
+      { name: "Mountain Climbers or Burpees", sets: 3, reps: "15-20", rest: 45 },
+      { name: "Plank Shoulder Taps", sets: 3, reps: "10/side", rest: 45 }
+    ]}
+  ]
+};
+
+let currentMode = "gym";
+let currentPlan = null;
+let currentDayKey = null;
+let currentExIndex = 0, currentSet = 1, currentReps = 0;
+let sessionStart = null, sessionInterval = null, restInterval = null, restRemaining = 0;
+let setWeights = []; // weights logged this session
+
+const $ = id => document.getElementById(id);
+const APP_VERSION = 2;
+const HISTORY_CAP = 500;
+const ALL_VIEWS = ['planView','exerciseList','importView','workoutView','summary','historyView','exportView'];
+function hideViewsExcept(keep) { ALL_VIEWS.forEach(id => { if (id !== keep) $(id).classList.remove('active'); }); }
+function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function readHistory() {
+  try { const h = JSON.parse(localStorage.getItem('workGymHistory') || '[]'); return Array.isArray(h) ? h : []; }
+  catch(e) { return []; }
+}
+function clonePlan(p) { return JSON.parse(JSON.stringify(p)); }
+function builtinPlan(mode) { return clonePlan(mode === 'home' ? homePlan : gymPlan); }
+// A plan is "custom" (imported) unless its days are exactly one of the built-in plans.
+function isCustomPlan() {
+  if (!currentPlan) return false;
+  if (currentPlan.source === 'import') return true;
+  if (currentPlan.source === 'builtin') return false;
+  const d = JSON.stringify(currentPlan.days);
+  return d !== JSON.stringify(gymPlan.days) && d !== JSON.stringify(homePlan.days);
+}
+function confirmOverwrite(what) {
+  if (!isCustomPlan()) return true;
+  return confirm(`This replaces your imported plan with the ${what}. Your history is kept, but you'd need to re-import the plan JSON to get it back. Continue?`);
+}
+// Optional coach goal fields on an exercise: targetWeight, targetReps, goal, note (all optional).
+function goalText(ex) {
+  const parts = [];
+  if (ex.targetWeight != null && ex.targetWeight !== '') parts.push(`${ex.targetWeight}${/^[\d.]+$/.test(String(ex.targetWeight)) ? ' lbs' : ''}`);
+  if (ex.targetReps != null && ex.targetReps !== '') parts.push(`× ${ex.targetReps}`);
+  let s = parts.length ? 'Target: ' + parts.join(' ') : '';
+  if (ex.goal) s += (s ? ' • ' : 'Goal: ') + ex.goal;
+  return s;
+}
+
+function getFormCue(name) {
+  const n = name.toLowerCase();
+  if (n.includes('squat')) return 'Feet shoulder-width, chest up, sit back like sitting in a chair. Knees track over toes. Drive through heels.';
+  if (n.includes('lunge')) return 'Step back or forward, lower until both knees ~90°. Front knee over ankle, torso upright. Push through front heel.';
+  if (n.includes('leg press')) return 'Feet mid-platform, lower until knees ~90° without locking. Don’t let lower back lift off pad.';
+  if (n.includes('bench') || n.includes('chest press')) return 'Retract shoulder blades, lower bar/DB to mid-chest, press up. Keep wrists stacked over elbows.';
+  if (n.includes('push-up') || n.includes('push up')) return 'Body straight from head to heels. Lower chest to floor, elbows ~45°. Push through palms.';
+  if (n.includes('pulldown') || n.includes('pull-up') || n.includes('pull up')) return 'Pull elbows down and back. Squeeze shoulder blades. Control the return.';
+  if (n.includes('row')) return 'Pull elbows back, squeeze shoulder blades together. Keep chest up, avoid shrugging.';
+  if (n.includes('deadlift') || n.includes('romanian') || n.includes('rdl')) return 'Hinge at hips, soft knee bend. Keep back flat, bar/DB close to legs. Drive hips forward.';
+  if (n.includes('shoulder press') || n.includes('overhead')) return 'Brace core. Press straight up, finish with biceps near ears. Don’t arch lower back excessively.';
+  if (n.includes('lateral raise')) return 'Slight elbow bend, raise to shoulder height. Lead with elbows, control the descent.';
+  if (n.includes('face pull')) return 'Pull rope toward face, elbows high. Externally rotate at the end. Squeeze rear delts.';
+  if (n.includes('curl')) return 'Keep elbows pinned. Curl without swinging. Squeeze at top, lower with control.';
+  if (n.includes('plank')) return 'Body straight, core braced, glutes tight. Don’t let hips sag or pike up. Breathe steadily.';
+  if (n.includes('bridge') || n.includes('thrust')) return 'Drive through heels, squeeze glutes at top. Don’t hyperextend lower back.';
+  if (n.includes('bird dog')) return 'Extend opposite arm and leg. Keep hips level, core tight. Move slowly.';
+  if (n.includes('woodchop') || n.includes('anti-rotation')) return 'Rotate from core, not arms. Keep hips stable. Control both directions.';
+  if (n.includes('mountain climber')) return 'Plank position. Drive knees toward chest alternately. Keep hips low and stable.';
+  if (n.includes('superman')) return 'Lift arms and legs off floor. Squeeze glutes and upper back. Hold briefly.';
+  return 'Move with control. Brace core. Focus on the target muscle and full range of motion.';
+}
+
+function parseMinReps(repsStr) {
+  if (!repsStr) return 0;
+  const match = String(repsStr).match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : 0;
+}
+
+function loadPlan() {
+  const savedMode = localStorage.getItem('workGymMode') || "gym";
+  currentMode = savedMode;
+  const saved = localStorage.getItem('workGymPlan');
+  if (saved) {
+    try { 
+      const parsed = JSON.parse(saved);
+      if (!parsed || !Array.isArray(parsed.days) || !parsed.days.length) throw new Error('no days');
+      currentPlan = parsed;
+      // v2 fix: keep the saved (possibly imported) plan; sync the mode to the plan instead of discarding it.
+      if (parsed.mode === 'gym' || parsed.mode === 'home') {
+        currentMode = parsed.mode;
+        localStorage.setItem('workGymMode', currentMode);
+      }
+    } catch(e) { 
+      currentPlan = currentMode === "gym" ? JSON.parse(JSON.stringify(gymPlan)) : JSON.parse(JSON.stringify(homePlan)); 
+    }
+  } else {
+    currentPlan = currentMode === "gym" ? JSON.parse(JSON.stringify(gymPlan)) : JSON.parse(JSON.stringify(homePlan));
+  }
+  savePlan();
+  updateModeButtons();
+  renderDayButtons();
+  checkResume();
+}
+
+function setMode(mode) {
+  if (!confirmOverwrite(mode === 'gym' ? 'built-in Gym plan' : 'built-in Home Bodyweight plan')) return;
+  currentMode = mode;
+  localStorage.setItem('workGymMode', mode);
+  currentPlan = builtinPlan(mode);
+  currentPlan.source = 'builtin';
+  savePlan();
+  updateModeButtons();
+  renderDayButtons();
+  clearState();
+  alert(mode === "gym" ? "Switched to Gym plan." : "Switched to Home Bodyweight plan.");
+}
+
+function updateModeButtons() {
+  $('btnModeGym').classList.toggle('primary', currentMode === "gym");
+  $('btnModeHome').classList.toggle('primary', currentMode === "home");
+}
+
+function savePlan() { localStorage.setItem('workGymPlan', JSON.stringify(currentPlan)); }
+
+function saveState() {
+  const state = {
+    dayKey: currentDayKey,
+    exIndex: currentExIndex,
+    set: currentSet,
+    reps: currentReps,
+    sessionStart,
+    weights: setWeights,
+    inWorkout: $('workoutView').classList.contains('active') || $('restOverlay').classList.contains('active')
+  };
+  localStorage.setItem('workGymState', JSON.stringify(state));
+}
+
+function clearState() { localStorage.removeItem('workGymState'); }
+
+function checkResume() {
+  const raw = localStorage.getItem('workGymState');
+  if (!raw) return;
+  try {
+    const s = JSON.parse(raw);
+    if (s.inWorkout && s.dayKey && confirm('Resume previous workout?')) {
+      currentDayKey = s.dayKey;
+      currentExIndex = s.exIndex || 0;
+      currentSet = s.set || 1;
+      currentReps = s.reps || 0;
+      sessionStart = s.sessionStart || Date.now();
+      setWeights = s.weights || [];
+      document.querySelectorAll('.day-btn').forEach(b => b.classList.toggle('active', b.dataset.key === currentDayKey));
+      $('exerciseList').classList.remove('active');
+      $('workoutView').classList.add('active');
+      if (sessionInterval) clearInterval(sessionInterval);
+      sessionInterval = setInterval(updateSessionTimer, 1000);
+      updateWorkoutUI();
+    } else {
+      clearState();
+    }
+  } catch(e) { clearState(); }
+}
+
+function generate2WeekPlan() {
+  if (!confirmOverwrite(currentMode === 'gym' ? 'built-in Gym plan' : 'built-in Home Bodyweight plan')) return;
+  currentPlan = builtinPlan(currentMode);
+  currentPlan.source = 'builtin';
+  currentPlan.generated = new Date().toISOString().slice(0,10);
+  savePlan();
+  renderDayButtons();
+  clearState();
+  alert(currentMode === "gym" ? "Fresh gym total-body plan loaded." : "Fresh home bodyweight plan loaded.");
+}
+
+function renderDayButtons() {
+  const sel = $('daySelector');
+  if (!currentPlan?.days) return;
+  sel.innerHTML = currentPlan.days.map(d => 
+    `<button class="day-btn" data-key="${esc(d.key)}">${esc(d.key)}<br>${esc(d.type || '')}</button>`
+  ).join('');
+  document.querySelectorAll('.day-btn').forEach(btn => {
+    btn.onclick = () => selectDay(btn.dataset.key);
+  });
+}
+
+function getLastWeight(exName) {
+  // Check current session first
+  const sessionLast = setWeights.filter(w => w.ex === exName).pop();
+  if (sessionLast) return sessionLast.weight;
+  // Then history
+  const history = readHistory();
+  for (const h of history) {
+    const found = (Array.isArray(h && h.sets) ? h.sets : []).filter(s => s && s.ex === exName).pop();
+    if (found && found.weight) return found.weight;
+  }
+  return null;
+}
+
+function selectDay(key) {
+  currentDayKey = key;
+  document.querySelectorAll('.day-btn').forEach(b => b.classList.toggle('active', b.dataset.key === key));
+  const day = currentPlan.days.find(d => d.key === key);
+  if (!day) return;
+  const list = $('exerciseList');
+  const warmUp = `
+    <div class="ex-card" style="border-color:var(--accent);">
+      <div class="ex-name">Quick Warm-Up (2–3 min)</div>
+      <div class="ex-meta">Bodyweight squats ×10 • Glute bridges ×10 • Arm circles or light face pulls • Bird dogs ×5/side</div>
+      ${currentPlan.warmUp ? `<div class="note-line">Coach: ${esc(currentPlan.warmUp)}</div>` : ''}
+    </div>`;
+  list.innerHTML = `<h3 style="margin:6px 0 8px">${esc(day.name)}</h3>` +
+    (day.note ? `<div class="note-line" style="margin:-4px 0 8px">${esc(day.note)}</div>` : '') + warmUp +
+    day.exercises.map((ex,i) => `
+      <div class="ex-card" data-index="${i}">
+        <div class="ex-name">${esc(ex.name)}</div>
+        <div class="ex-meta">${esc(ex.sets)}×${esc(ex.reps)} • Rest ${esc(ex.rest)}s</div>
+        ${goalText(ex) ? `<div class="goal-line">${esc(goalText(ex))}</div>` : ''}
+        ${ex.note ? `<div class="note-line">${esc(ex.note)}</div>` : ''}
+        <div class="ex-meta" style="margin-top:4px;font-size:0.75rem;color:#a0b0c0">${getFormCue(ex.name)}</div>
+      </div>`).join('') +
+    `<button class="big btn-done" id="startWorkout" style="width:100%;margin-top:6px">Start Workout</button>`;
+  document.querySelectorAll('.ex-card').forEach(c => {
+    if (c.dataset.index) c.onclick = () => startExercise(+c.dataset.index);
+  });
+  $('startWorkout').onclick = () => startExercise(0);
+  list.classList.add('active');
+  hideViewsExcept('exerciseList');
+  clearState();
+}
+
+function startExercise(index) {
+  currentExIndex = index;
+  currentSet = 1;
+  const day = getCurrentDay();
+  const ex = day.exercises[index];
+  currentReps = parseMinReps(ex.reps);
+  sessionStart = Date.now();
+  setWeights = [];
+  if (sessionInterval) clearInterval(sessionInterval);
+  sessionInterval = setInterval(updateSessionTimer, 1000);
+  $('exerciseList').classList.remove('active');
+  $('workoutView').classList.add('active');
+  updateWorkoutUI();
+  saveState();
+}
+
+function getCurrentDay() { return currentPlan.days.find(d => d.key === currentDayKey); }
+
+function updateWorkoutUI() {
+  const day = getCurrentDay(); if (!day) return;
+  const ex = day.exercises[currentExIndex];
+  $('currentExName').textContent = ex.name;
+  $('setInfo').textContent = `Set ${currentSet} of ${ex.sets}`;
+  $('targetReps').textContent = `Target: ${ex.reps} (starts at ${parseMinReps(ex.reps)})`;
+  $('repDisplay').textContent = currentReps;
+  // Form cue
+  let cueEl = document.getElementById('formCue');
+  if (!cueEl) {
+    cueEl = document.createElement('div');
+    cueEl.id = 'formCue';
+    cueEl.style.cssText = 'font-size:0.82rem;color:#a0b0c0;margin:6px 0 10px;line-height:1.35;padding:0 8px';
+    $('targetReps').after(cueEl);
+  }
+  cueEl.textContent = getFormCue(ex.name);
+  // Coach goal / note (only if the plan provides them)
+  let goalEl = document.getElementById('goalNote');
+  if (!goalEl) {
+    goalEl = document.createElement('div');
+    goalEl.id = 'goalNote';
+    goalEl.style.cssText = 'font-size:0.85rem;color:#ffd166;margin:0 0 8px;padding:0 8px;font-weight:600';
+    cueEl.after(goalEl);
+  }
+  const gt = [goalText(ex), ex.note].filter(Boolean).join(' — ');
+  goalEl.textContent = gt;
+  goalEl.style.display = gt ? '' : 'none';
+  $('setProgress').style.width = ((currentSet-1)/ex.sets*100)+'%';
+  timerSetup(ex);
+  // Last weight note
+  const lastW = getLastWeight(ex.name);
+  const note = $('lastWeightNote');
+  if (lastW) {
+    note.textContent = `Last time: ${lastW} lbs — match or beat it`;
+    note.style.color = 'var(--accent)';
+  } else {
+    note.textContent = '';
+  }
+  // Pre-fill last weight (v2: clear a stale weight carried over from the previous exercise)
+  if (lastW) $('weightInput').value = lastW;
+  else if (currentSet === 1) $('weightInput').value = '';
+  saveState();
+}
+
+function updateSessionTimer() {
+  if (!sessionStart) return;
+  const sec = Math.floor((Date.now()-sessionStart)/1000);
+  $('sessionTimer').textContent = `Session: ${Math.floor(sec/60)}:${(sec%60).toString().padStart(2,'0')}`;
+}
+
+function addRep() {
+  currentReps++;
+  $('repDisplay').textContent = currentReps;
+  if (navigator.vibrate) navigator.vibrate(12);
+  saveState();
+}
+
+function completeSet() {
+  const day = getCurrentDay();
+  const ex = day.exercises[currentExIndex];
+  const weight = parseFloat($('weightInput').value) || 0;
+  const tinfo = T.info;
+  if (tinfo && T.phase !== 'idle' && T.phase !== 'done') { const h = timerHeldSoFar(); if (h != null) currentReps = h; }
+  const rec = { ex: ex.name, set: currentSet, reps: currentReps, weight,
+    target: ex.reps, rest: ex.rest, at: new Date().toISOString() };
+  if (tinfo && T.phase !== 'idle') { rec.timed = true; rec.seconds = currentReps; if (T.held.length > 1) rec.sides = T.held.slice(); }
+  timerReset(true); T.key = null;
+  if (ex.targetWeight != null && ex.targetWeight !== '') rec.targetWeight = ex.targetWeight;
+  setWeights.push(rec);
+  if (currentSet < ex.sets) {
+    currentSet++;
+    currentReps = parseMinReps(ex.reps);
+    startRest(ex.rest);
+  } else if (currentExIndex < day.exercises.length - 1) {
+    currentExIndex++;
+    currentSet = 1;
+    currentReps = parseMinReps(day.exercises[currentExIndex].reps);
+    startRest(day.exercises[currentExIndex].rest);
+  } else {
+    finishWorkout();
+  }
+  saveState();
+}
+
+function startRest(sec) {
+  restRemaining = sec;
+  $('restTime').textContent = restRemaining;
+  $('restOverlay').classList.add('active');
+  if (restInterval) clearInterval(restInterval);
+  restInterval = setInterval(() => {
+    restRemaining--;
+    $('restTime').textContent = restRemaining;
+    if (restRemaining <= 0) { clearInterval(restInterval); endRest(); }
+  }, 1000);
+  if (navigator.vibrate) navigator.vibrate([70,30,70]);
+  saveState();
+}
+
+function endRest() {
+  $('restOverlay').classList.remove('active');
+  updateWorkoutUI();
+  saveState();
+}
+
+function finishWorkout() {
+  clearInterval(sessionInterval);
+  timerReset(true); T.key = null;
+  $('workoutView').classList.remove('active');
+  $('summary').classList.add('active');
+  const mins = Math.round((Date.now()-sessionStart)/60000);
+  const finisher = currentMode === 'gym' 
+    ? 'Optional finisher: 5–8 min StairMaster intervals or light cable woodchops.' 
+    : 'Optional finisher: 5–8 min mountain climbers, high knees, or jumping jacks.';
+  $('summaryText').innerHTML = `${esc(getCurrentDay().name)} finished in ~${mins} min. Weights saved to history.<br><br><strong>${finisher}</strong>`;
+  // Save to history
+  const history = readHistory();
+  history.unshift({
+    date: new Date().toISOString(),
+    day: getCurrentDay().name,
+    duration: mins,
+    sets: setWeights,
+    // v2 extras (older entries simply lack these)
+    v: APP_VERSION,
+    dayKey: currentDayKey,
+    mode: currentMode,
+    startedAt: sessionStart ? new Date(sessionStart).toISOString() : null,
+    planGenerated: currentPlan.generated || null
+  });
+  localStorage.setItem('workGymHistory', JSON.stringify(history.slice(0, HISTORY_CAP)));
+  clearState();
+  if (navigator.vibrate) navigator.vibrate([120,60,120]);
+}
+
+function showHistory() {
+  const history = readHistory();
+  const view = $('historyView');
+  if (!history.length) {
+    view.innerHTML = '<p>No workouts logged yet.</p><button class="btn-secondary" id="closeHist" style="width:100%;margin-top:8px">Close</button>';
+  } else {
+    view.innerHTML = '<h3 style="margin:6px 0">Workout History</h3>' +
+      `<div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px">${history.length} workout(s) saved (keeps up to ${HISTORY_CAP}). Use Export to send them to your coach.</div>` +
+      history.map(h => {
+        const d = new Date(h && h.date);
+        const date = isNaN(d) ? '?' : d.toLocaleDateString();
+        const sets = Array.isArray(h && h.sets) ? h.sets.filter(Boolean) : [];
+        const groups = [];
+        sets.forEach(s => {
+          let g = groups.find(x => x.ex === s.ex);
+          if (!g) { g = { ex: s.ex, sets: [] }; groups.push(g); }
+          g.sets.push(s);
+        });
+        const lines = groups.map(g => `<div class="hist-ex"><span style="color:var(--text)">${esc(g.ex)}</span>: ${g.sets.map(s => (s.weight ? esc(s.weight) + '×' : '') + esc(s.reps)).join(', ')}</div>`).join('');
+        return `<div class="hist-item"><strong>${esc(date)}</strong> – ${esc(h.day || '')} (${esc(h.duration != null ? h.duration : '?')}min)${lines || '<div class="hist-ex">No sets recorded</div>'}</div>`;
+      }).join('') +
+      '<button class="btn-secondary" id="closeHist" style="width:100%;margin-top:8px">Close</button>';
+  }
+  view.classList.add('active');
+  $('closeHist').onclick = () => view.classList.remove('active');
+  hideViewsExcept('historyView');
+}
+
+function showImport() {
+  $('importView').classList.add('active');
+  hideViewsExcept('importView');
+}
+
+function doImport() {
+  try {
+    const data = JSON.parse($('importText').value);
+    if (data && data.format === 'workgym-export') { restoreBackup(data); return; }
+    if (data.days) currentPlan = data;
+    else throw new Error();
+    currentPlan.source = 'import';
+    if (data.mode === 'gym' || data.mode === 'home') {
+      currentMode = data.mode;
+      localStorage.setItem('workGymMode', currentMode);
+      updateModeButtons();
+    }
+    savePlan();
+    renderDayButtons();
+    $('importView').classList.remove('active');
+    clearState();
+    alert('Plan imported.');
+  } catch { alert('Bad JSON – check format.'); }
+}
+
+// ---------- v2: Countdown timer for timed holds ----------
+// Timed if the plan says so (timed:true / seconds:N) or the reps text leads with a duration
+// ("40s", "30-40s", "45-60 s", "25-35s/side", "1 min"). Tempo cues like "3s down" / "1s squeeze" are NOT timed.
+// Mixed targets like "12 or 40s" get the timer as an option (rep counter stays).
+const TEMPO_WORDS = /^\s*(down|up|squeeze|pause|hold|lower|lowering|at|ecc|eccentric|negative|tempo)/i;
+function timedInfo(ex) {
+  if (!ex || ex.timed === false) return null;
+  const reps = String(ex.reps == null ? '' : ex.reps);
+  const perSide = ex.perSide === true || (ex.perSide !== false && /\/\s*(side|leg|arm)\b|each side|per side/i.test(reps));
+  const explicit = Number(ex.seconds);
+  if (explicit > 0) return { seconds: Math.round(explicit), perSide, primary: true };
+  const re = /(\d+)(?:\s*[-–]\s*(\d+))?\s*(s|sec|secs|seconds|min|mins|minutes)\b/ig;
+  let m;
+  while ((m = re.exec(reps))) {
+    if (TEMPO_WORDS.test(reps.slice(m.index + m[0].length))) continue;
+    let sec = parseInt(m[1], 10) * (/^m/i.test(m[3]) ? 60 : 1);
+    if (!(sec > 0)) continue;
+    const primary = ex.timed === true || reps.slice(0, m.index).trim() === '';
+    const after = reps.slice(m.index + m[0].length);
+    const sideHere = ex.perSide === true || (ex.perSide !== false && /^\s*(\/\s*(side|leg|arm)\b|each side|per side)/i.test(after));
+    return { seconds: sec, perSide: sideHere, primary };
+  }
+  if (ex.timed === true) { const n = parseMinReps(reps); if (n > 0) return { seconds: n, perSide, primary: true }; }
+  return null;
+}
+const SWITCH_GAP = 5, GET_READY = 3;
+let T = { info:null, key:null, phase:'idle', target:0, remaining:0, endAt:0, side:1, held:[], heldStart:0, heldBase:0, running:false, tick:null, lastBeep:null, wake:null, audio:null, autoTimer:null };
+function fmtSec(s) { s = Math.max(0, Math.ceil(s)); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
+function beep(freq, ms) {
+  try {
+    const AC = (typeof window !== 'undefined') && (window.AudioContext || window.webkitAudioContext);
+    if (!AC) return;
+    if (!T.audio) T.audio = new AC();
+    if (T.audio.state === 'suspended' && T.audio.resume) T.audio.resume();
+    const o = T.audio.createOscillator(), g = T.audio.createGain(), t0 = T.audio.currentTime;
+    o.type = 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.35, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + ms/1000);
+    o.connect(g); g.connect(T.audio.destination); o.start(t0); o.stop(t0 + ms/1000 + 0.02);
+  } catch(e) {}
+}
+function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch(e) {} }
+async function wakeOn() {
+  if (T.wake || T.wakePending || !navigator.wakeLock || !navigator.wakeLock.request) return;
+  T.wakePending = true;
+  try {
+    const lock = await navigator.wakeLock.request('screen');
+    T.wakePending = false;
+    if (!T.running) { try { lock.release(); } catch(e) {} return; } // timer stopped while we waited
+    T.wake = lock;
+    lock.addEventListener && lock.addEventListener('release', () => { if (T.wake === lock) T.wake = null; });
+  } catch(e) { T.wakePending = false; T.wake = null; }
+}
+function wakeOff() { try { if (T.wake) T.wake.release(); } catch(e) {} T.wake = null; }
+function timerStopTick() { if (T.tick) clearInterval(T.tick); T.tick = null; }
+function heldNow() { return T.phase === 'hold' && T.running ? T.heldBase + (Date.now() - T.heldStart)/1000 : T.heldBase; }
+function timerRender() {
+  const panel = $('timerPanel'); if (!panel) return;
+  panel.classList.toggle('running', T.running && T.phase === 'hold');
+  panel.classList.toggle('getready', T.phase === 'ready' || T.phase === 'switch');
+  const sides = T.info && T.info.perSide && $('timerBothSides').checked;
+  const labels = {
+    idle: T.info ? (sides ? `Timed hold • ${T.target}s each side` : `Timed hold • ${T.target}s`) : '',
+    ready: 'Get ready…',
+    hold: sides ? `HOLD — side ${T.side} of 2` : 'HOLD',
+    switch: 'Switch sides…',
+    done: 'Done ✓ — logging set'
+  };
+  $('timerPhase').textContent = labels[T.phase] + (!T.running && (T.phase === 'hold' || T.phase === 'ready' || T.phase === 'switch') ? ' (paused)' : '');
+  $('timerTime').textContent = fmtSec(T.phase === 'idle' ? T.target : T.phase === 'done' ? currentReps : T.remaining);
+  $('timerStart').textContent = T.running ? 'Pause' : (T.phase === 'idle' ? 'Start' : (T.phase === 'done' ? 'Done' : 'Resume'));
+}
+function timerSetup(ex) {
+  const info = timedInfo(ex);
+  const key = currentDayKey + '|' + currentExIndex + '|' + currentSet;
+  if (T.key === key && T.phase !== 'idle') { timerRender(); return; } // same set already running/paused
+  timerReset(true);
+  T.info = info; T.key = key;
+  const show = !!info;
+  $('timerPanel').classList.toggle('active', show);
+  // For primary timed holds the timer replaces the rep counter; mixed targets keep both.
+  const hideReps = show && info.primary;
+  $('repDisplay').style.display = hideReps ? 'none' : '';
+  $('addRep').style.display = hideReps ? 'none' : '';
+  if (!show) return;
+  if (info.primary) $('targetReps').textContent = `Target: ${ex.reps}`;
+  T.target = info.seconds;
+  $('timerSidesWrap').style.display = info.perSide ? '' : 'none';
+  timerRender();
+}
+function timerReset(silent) {
+  timerStopTick(); wakeOff();
+  if (T.autoTimer) { clearTimeout(T.autoTimer); T.autoTimer = null; }
+  T.phase = 'idle'; T.running = false; T.side = 1; T.held = []; T.heldBase = 0; T.remaining = T.target; T.lastBeep = null;
+  if (!silent) timerRender();
+}
+function timerBegin(phase, secs) {
+  T.phase = phase; T.remaining = secs; T.endAt = Date.now() + secs*1000; T.lastBeep = null;
+  if (phase === 'hold') { T.heldBase = 0; T.heldStart = Date.now(); }
+  T.running = true;
+  timerStopTick(); T.tick = setInterval(timerTick, 200);
+  timerRender();
+}
+function timerTick() {
+  if (!T.running) return;
+  T.remaining = (T.endAt - Date.now())/1000;
+  const whole = Math.ceil(T.remaining);
+  if (whole <= 3 && whole >= 1 && T.lastBeep !== whole) { T.lastBeep = whole; beep(660, 120); buzz(60); }
+  if (T.remaining <= 0) { T.remaining = 0; timerPhaseEnd(); return; }
+  timerRender();
+}
+function timerPhaseEnd() {
+  timerStopTick();
+  if (T.phase === 'ready' || T.phase === 'switch') { beep(990, 250); buzz(150); timerBegin('hold', T.target); return; }
+  if (T.phase === 'hold') {
+    T.held.push(Math.round(T.heldBase + (Date.now() - T.heldStart)/1000 > T.target ? T.target : T.heldBase + (Date.now() - T.heldStart)/1000));
+    T.running = false;
+    beep(880, 600); buzz([300,100,300]);
+    if (T.info.perSide && $('timerBothSides').checked && T.side === 1) { T.side = 2; timerBegin('switch', SWITCH_GAP); return; }
+    timerFinish(true);
+  }
+}
+// Auto-advance: when the countdown hits zero the set is logged with the seconds held and the normal rest timer starts.
+function timerFinish(auto) {
+  T.phase = 'done'; T.running = false; timerStopTick(); wakeOff();
+  currentReps = T.held.length ? Math.min.apply(null, T.held) : 0;
+  $('repDisplay').textContent = currentReps;
+  timerRender(); saveState();
+  if (auto) T.autoTimer = setTimeout(() => { T.autoTimer = null; if ($('workoutView').classList.contains('active')) completeSet(); }, 1200);
+}
+function timerToggle() {
+  if (!T.info) return;
+  beep(1, 1); // unlock audio on the user's tap (iOS)
+  if (T.phase === 'done') return;
+  if (T.running) { // pause
+    T.remaining = Math.max(0, (T.endAt - Date.now())/1000);
+    if (T.phase === 'hold') T.heldBase += (Date.now() - T.heldStart)/1000;
+    T.running = false; timerStopTick(); wakeOff(); timerRender(); return;
+  }
+  wakeOn();
+  if (T.phase === 'idle') { $('timerGetReady').checked ? timerBegin('ready', GET_READY) : timerBegin('hold', T.target); if (!$('timerGetReady').checked) { beep(990, 250); buzz(150); } return; }
+  // resume
+  T.endAt = Date.now() + T.remaining*1000; if (T.phase === 'hold') T.heldStart = Date.now();
+  T.running = true; T.tick = setInterval(timerTick, 200); timerRender();
+}
+function timerAdjust(d) {
+  if (!T.info) return;
+  if (T.phase === 'idle' || T.phase === 'done') { T.target = Math.max(5, T.target + d); T.remaining = T.target; timerRender(); return; }
+  if (T.phase === 'hold') T.target = Math.max(5, T.target + d);
+  T.remaining = Math.max(1, T.remaining + d);
+  if (T.running) T.endAt = Date.now() + T.remaining*1000;
+  timerRender();
+}
+// Seconds actually held so far (used if he taps Done Set early).
+function timerHeldSoFar() {
+  if (!T.info || T.phase === 'idle') return null;
+  const parts = T.held.slice();
+  if (T.phase === 'hold') parts.push(Math.round(heldNow()));
+  return parts.length ? Math.min.apply(null, parts) : null;
+}
+if (typeof document !== 'undefined' && document.addEventListener) {
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && T.running) wakeOn(); });
+}
+
+// ---------- v2: Export / backup ----------
+function buildExport() {
+  const history = readHistory();
+  const setLog = [];
+  history.forEach(h => {
+    (Array.isArray(h && h.sets) ? h.sets : []).forEach(s => {
+      if (!s) return;
+      setLog.push({ date: h.date, day: h.day, dayKey: h.dayKey || null, exercise: s.ex, set: s.set, weight: s.weight, reps: s.reps, target: s.target || null });
+    });
+  });
+  let state = null;
+  try { state = JSON.parse(localStorage.getItem('workGymState') || 'null'); } catch(e) {}
+  return {
+    format: 'workgym-export',
+    version: APP_VERSION,
+    exportedAt: new Date().toISOString(),
+    mode: currentMode,
+    plan: currentPlan,
+    planIsImported: isCustomPlan(),
+    workoutCount: history.length,
+    setCount: setLog.length,
+    history: history,
+    setLog: setLog,
+    inProgress: state && state.inWorkout ? state : null
+  };
+}
+function exportFileName() { return 'workgym-export-' + new Date().toISOString().slice(0,10) + '.json'; }
+function exportStatus(msg) { $('exportStatus').textContent = msg; }
+function showExport() {
+  $('exportText').value = JSON.stringify(buildExport(), null, 2);
+  exportStatus('');
+  $('exportView').classList.add('active');
+  hideViewsExcept('exportView');
+}
+function downloadExport(text) {
+  try {
+    const blob = new Blob([text], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = exportFileName();
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    exportStatus('Download started (' + exportFileName() + ').');
+  } catch(e) { exportStatus('Download not supported here — use Copy instead.'); }
+}
+async function shareExport() {
+  const text = $('exportText').value || JSON.stringify(buildExport(), null, 2);
+  try {
+    if (navigator.share && typeof File !== 'undefined') {
+      const file = new File([text], exportFileName(), { type: 'application/json' });
+      if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Work Gym export', text: 'Work Gym history + plan' });
+        exportStatus('Shared.');
+        return;
+      }
+    }
+  } catch(e) {
+    if (e && e.name === 'AbortError') { exportStatus('Share cancelled.'); return; }
+  }
+  downloadExport(text);
+}
+async function copyExport() {
+  const ta = $('exportText');
+  const text = ta.value;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      exportStatus('Copied — paste it to your coach.');
+      return;
+    }
+  } catch(e) {}
+  try {
+    ta.removeAttribute && ta.removeAttribute('readonly');
+    ta.focus && ta.focus(); ta.select && ta.select();
+    ta.setSelectionRange && ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand && document.execCommand('copy');
+    ta.setAttribute && ta.setAttribute('readonly', '');
+    exportStatus(ok ? 'Copied — paste it to your coach.' : 'Select all the text below and copy it manually.');
+  } catch(e) { exportStatus('Select all the text below and copy it manually.'); }
+}
+// Restore an export bundle (e.g. moving to a new phone/browser). Merges history without duplicates.
+function restoreBackup(data) {
+  const incoming = Array.isArray(data.history) ? data.history : [];
+  const existing = readHistory();
+  const seen = new Set(existing.map(h => h && h.date + '|' + h.day));
+  const merged = existing.concat(incoming.filter(h => h && !seen.has(h.date + '|' + h.day)));
+  merged.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const added = merged.length - existing.length;
+  const restorePlan = data.plan && Array.isArray(data.plan.days) && confirm('Also restore the plan from this backup? (Replaces the current plan.)');
+  if (!confirm(`Restore ${added} new workout(s) into history?`)) return;
+  localStorage.setItem('workGymHistory', JSON.stringify(merged.slice(0, HISTORY_CAP)));
+  if (restorePlan) {
+    currentPlan = data.plan;
+    if (data.mode === 'gym' || data.mode === 'home') { currentMode = data.mode; localStorage.setItem('workGymMode', currentMode); }
+    savePlan(); updateModeButtons(); renderDayButtons(); clearState();
+  }
+  $('importView').classList.remove('active');
+  alert(`Backup restored: ${added} workout(s) added${restorePlan ? ', plan restored' : ''}.`);
+}
+
+// Events
+$('btnGenerate').onclick = generate2WeekPlan;
+$('btnModeGym').onclick = () => setMode("gym");
+$('btnModeHome').onclick = () => setMode("home");
+$('btnImport').onclick = showImport;
+$('btnPlan').onclick = () => {
+  $('planView').classList.add('active');
+  const pnote = currentPlan.note || (currentPlan.block && currentPlan.block.note);
+  $('planView').innerHTML = '<h3 style="margin:6px 0">2-Week Total Body Schedule</h3>' +
+    `<div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px">${isCustomPlan() ? 'Imported plan' : 'Built-in plan'} • ${esc(currentPlan.mode || currentMode)}${currentPlan.generated ? ' • ' + esc(currentPlan.generated) : ''}</div>` +
+    (pnote ? `<div class="note-line" style="margin-bottom:8px">${esc(pnote)}</div>` : '') +
+    currentPlan.days.map(d => `<div class="plan-item">${esc(d.name)}</div>`).join('') +
+    '<button class="btn-secondary" id="closePlan" style="width:100%;margin-top:8px">Close</button>';
+  $('closePlan').onclick = () => $('planView').classList.remove('active');
+  hideViewsExcept('planView');
+};
+$('btnHistory').onclick = showHistory;
+$('btnExport').onclick = showExport;
+$('exportShare').onclick = shareExport;
+$('exportDownload').onclick = () => downloadExport($('exportText').value);
+$('exportCopy').onclick = copyExport;
+$('closeExport').onclick = () => $('exportView').classList.remove('active');
+$('doImport').onclick = doImport;
+$('cancelImport').onclick = () => $('importView').classList.remove('active');
+$('addRep').onclick = addRep;
+$('timerStart').onclick = timerToggle;
+$('timerReset').onclick = () => { timerReset(); };
+$('timerMinus').onclick = () => timerAdjust(-5);
+$('timerPlus').onclick = () => timerAdjust(5);
+$('doneSet').onclick = completeSet;
+$('skipRest').onclick = () => { clearInterval(restInterval); endRest(); };
+$('endWorkout').onclick = () => { if (confirm('End workout?')) finishWorkout(); };
+$('backHome').onclick = () => { $('summary').classList.remove('active'); renderDayButtons(); };
+
+// Long-press to subtract rep
+let pt;
+$('repDisplay').ontouchstart = $('repDisplay').onmousedown = () => {
+  pt = setTimeout(() => { if (currentReps > 0) { currentReps--; $('repDisplay').textContent = currentReps; saveState(); } }, 450);
+};
+$('repDisplay').ontouchend = $('repDisplay').onmouseup = () => clearTimeout(pt);
+
+// PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+loadPlan();
+</script>
+</body>
+</html>
