@@ -1,0 +1,220 @@
+{
+  "generated": "2026-11-22",
+  "mode": "gym",
+  "block": {
+    "start": "2026-11-23",
+    "end": "2026-11-25",
+    "note": "Week 2, 3 gym mornings before Jacksonville. Mon is a heavy Chest + Shoulders day with a tight abs circuit. Tue is now Back + Abs so chest gets a rest day. Wed is unchanged. Heavy sets rest 75s; accessories and abs rest 30s. No lunges."
+  },
+  "warmUp": "Use the app's Quick Warm-Up card (bodyweight squats, glute bridges, arm circles or light face pulls, bird dogs).",
+  "finisher": "Optional 5 min easy StairMaster. Skip if you're short on time.",
+  "days": [
+    {
+      "key": "Mon-A",
+      "name": "Mon 11/23 \u2013 Gym A: Heavy Chest + Shoulders + Abs",
+      "type": "Chest/Shoulders",
+      "exercises": [
+        {
+          "name": "Dumbbell Bench Press",
+          "sets": 4,
+          "reps": "6-8",
+          "rest": 75,
+          "targetWeight": 50,
+          "targetReps": "6-8",
+          "note": "Heavy day. Two lighter warm-up sets first. Stop 1-2 reps short of failure; drop to 45 if the bar path or elbows get sloppy."
+        },
+        {
+          "name": "Seated Dumbbell Shoulder Press",
+          "sets": 4,
+          "reps": "6-8",
+          "rest": 75,
+          "targetWeight": 30,
+          "targetReps": "6-8",
+          "note": "New. Bench upright, press overhead without arching your lower back. 30 lb each hand to start; go up if the last rep is clean."
+        },
+        {
+          "name": "Incline Dumbbell Press",
+          "sets": 3,
+          "reps": "8-10",
+          "rest": 60,
+          "targetWeight": 35,
+          "targetReps": "8-10",
+          "note": "New. Bench at about 30 degrees for upper chest. 35 lb each hand to start."
+        },
+        {
+          "name": "Cable Lateral Raise",
+          "sets": 3,
+          "reps": "12-15/side",
+          "rest": 30,
+          "targetWeight": 10,
+          "targetReps": "12-15/side",
+          "note": "New. Low pulley, raise out to shoulder height, lead with the elbow. Keep it light and strict."
+        },
+        {
+          "name": "Cable Chest Fly",
+          "sets": 3,
+          "reps": "12-15",
+          "rest": 30,
+          "targetWeight": "20 per handle",
+          "targetReps": "12-15",
+          "note": "New. Handles at shoulder height, soft elbows, squeeze the handles together in front of your chest."
+        },
+        {
+          "name": "Cable Crunch or Hanging Knee Raise",
+          "sets": 3,
+          "reps": "15",
+          "rest": 30,
+          "targetWeight": 120,
+          "targetReps": "15",
+          "note": "Abs circuit: go straight into the next ab move, rest 30s after each round."
+        },
+        {
+          "name": "Dead Bug",
+          "sets": 3,
+          "reps": "10/side",
+          "rest": 30,
+          "targetReps": "10/side",
+          "note": "New. Lower back pressed into the floor the whole time; slow reach of opposite arm and leg."
+        },
+        {
+          "name": "Cable Woodchop",
+          "sets": 3,
+          "reps": "12/side",
+          "rest": 30,
+          "targetWeight": 25,
+          "targetReps": "12/side",
+          "note": "Rotate from your core, not your arms."
+        },
+        {
+          "name": "Plank",
+          "sets": 3,
+          "reps": "60s",
+          "rest": 30,
+          "targetReps": "60s",
+          "goal": "Hold 60s, tight glutes and abs"
+        }
+      ]
+    },
+    {
+      "key": "Tue-B",
+      "name": "Tue 11/24 \u2013 Gym B: Back + Abs",
+      "type": "Back",
+      "exercises": [
+        {
+          "name": "Assisted Pull-up (Gravitron)",
+          "sets": 3,
+          "reps": "8-10",
+          "rest": 45,
+          "targetWeight": "enough assist for 8-10 clean reps",
+          "targetReps": "8-10",
+          "note": "New. Use the Gravitron instead of the pulldown. Start with plenty of assist so you get 8-10 smooth reps, no swinging. Less assist on the next set if it felt easy."
+        },
+        {
+          "name": "Chest-Supported Dumbbell Row",
+          "sets": 3,
+          "reps": "10-12/arm",
+          "rest": 45,
+          "targetWeight": 30,
+          "targetReps": "10-12/arm",
+          "note": "New. Chest on an incline bench, row the DBs, squeeze your shoulder blades, don't shrug. Start at 30 lb each hand."
+        },
+        {
+          "name": "Seated Cable Row",
+          "sets": 3,
+          "reps": "10-12",
+          "rest": 45,
+          "targetWeight": 70,
+          "targetReps": "10-12",
+          "note": "New. Sit tall, pull the handle to your lower ribs, squeeze shoulder blades. 70 lb to start; adjust so the last 2 reps are hard."
+        },
+        {
+          "name": "Straight-Arm Cable Pulldown",
+          "sets": 3,
+          "reps": "12-15",
+          "rest": 30,
+          "targetWeight": 30,
+          "targetReps": "12-15",
+          "note": "New. Rope or bar from the high pulley, arms nearly straight, sweep down to your thighs using your lats."
+        },
+        {
+          "name": "Cable Face Pulls",
+          "sets": 3,
+          "reps": "15",
+          "rest": 30,
+          "targetWeight": 60,
+          "targetReps": "15",
+          "goal": "Was 45-55x15; try 60x15"
+        },
+        {
+          "name": "Cable Pallof Press",
+          "sets": 3,
+          "reps": "10/side",
+          "rest": 30,
+          "targetWeight": 20,
+          "targetReps": "10/side",
+          "note": "New. Stand sideways to a mid-height cable, press the handle straight out and pause, resist the twist. 20 lb is plenty to start."
+        }
+      ]
+    },
+    {
+      "key": "Wed-C",
+      "name": "Wed 11/25 \u2013 Gym C: Glutes + Hams + Abs",
+      "type": "Glute/Ham",
+      "exercises": [
+        {
+          "name": "Single-Leg Romanian Deadlift (DB)",
+          "sets": 3,
+          "reps": "10-12/leg",
+          "rest": 45,
+          "targetWeight": 45,
+          "targetReps": "10-12/leg",
+          "goal": "Was 35-45x10; try 45x10-12 per leg"
+        },
+        {
+          "name": "Single-Leg Glute Bridge (DB on hips)",
+          "sets": 3,
+          "reps": "10/leg",
+          "rest": 45,
+          "targetWeight": 30,
+          "targetReps": "10/leg",
+          "note": "New. Upper back on the floor or bench, DB on the working-side hip, other foot off the floor, drive through the heel and squeeze at the top. 30 lb is a conservative start."
+        },
+        {
+          "name": "Leg Curl Machine",
+          "sets": 3,
+          "reps": "14-15",
+          "rest": 30,
+          "targetWeight": 60,
+          "targetReps": "14-15",
+          "goal": "Was 40-60x12-14; stay at 60 and push 14-15 clean reps"
+        },
+        {
+          "name": "Cable Woodchop",
+          "sets": 3,
+          "reps": "12",
+          "rest": 30,
+          "targetWeight": 25,
+          "targetReps": "12",
+          "goal": "Was 20x12; try 25x12. Rotate from your core, not your arms."
+        },
+        {
+          "name": "Side Plank",
+          "sets": 3,
+          "reps": "90s",
+          "rest": 30,
+          "targetReps": "90s",
+          "goal": "Hold the 90s you already logged; use auto 2nd side if you do both"
+        },
+        {
+          "name": "Cable Crunch or Hanging Knee Raise",
+          "sets": 3,
+          "reps": "15-18",
+          "rest": 30,
+          "targetWeight": 120,
+          "targetReps": "15-18",
+          "goal": "Was 120x15; stay at 120 and try 15-18"
+        }
+      ]
+    }
+  ]
+}
