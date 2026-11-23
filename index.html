@@ -222,6 +222,17 @@
   .body-view,.review-view,.settings-view { display:none; }
   .body-view.active,.review-view.active,.settings-view.active { display:block; }
   #goalNote:not(:empty) { background:#2a2615; border-left:4px solid #ffd166; border-radius:10px; padding:8px 10px !important; text-align:left; }
+
+  /* ---------- v4.1 edit logged sets ---------- */
+  body:has(#editView.active) .tab-bar, body:has(#editView.active) .deload-banner { display:none; }
+  .edit-view { display:none; position:fixed; inset:0; z-index:130; background:#05080c; overflow-y:auto; padding:16px 14px 36px; }
+  .edit-view.active { display:block; }
+  .set-btns { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; justify-content:flex-start; }
+  button.set-chip { min-height:48px; min-width:64px; padding:6px 12px; border:none; border-radius:10px; background:#2a3545; color:var(--text); font-weight:700; font-size:0.88rem; touch-action:manipulation; }
+  button.set-chip .pr { color:#ffd166; }
+  .edit-del { width:100%; min-height:56px; margin-top:10px; border:none; border-radius:12px; background:#3a1e1e; color:#ff8a8a; font-weight:800; font-size:0.95rem; }
+  .rir-btns button.on { background:#163a32; box-shadow:inset 0 0 0 2px var(--accent); }
+  .hist-item .hist-ex { margin-top:8px; }
 </style>
 </head>
 <body>
@@ -333,6 +344,7 @@
 
 <div id="swapView" class="swap-view"></div>
 <div id="readyView" class="ready-view"></div>
+<div id="editView" class="edit-view"></div>
 <div id="toast" class="toast"></div>
 
 <div id="summary" class="summary">
@@ -342,7 +354,7 @@
   <div id="checkinBox"></div>
 </div>
 
-<footer>Gym or Home • Form cues included • Definition cut • State persists • v4.0 (reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
+<footer>Gym or Home • Form cues included • Definition cut • State persists • v4.1 (edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
 
 <script>
 // Definition-focused total-body plans (muscle retention + fat loss while cutting from 215 toward 195-200).
@@ -2264,12 +2276,15 @@ function showReview() {
     <div class="export-actions"><button class="primary" id="sumCopy">Copy summary</button><button id="sumShare">Share</button></div>
     <div class="export-status" id="sumStatus"></div>
     <textarea id="sumText" readonly style="height:160px"></textarea></div>
+  <div class="prog-card"><h4>Logged workouts</h4><div class="prog-sub">Tap a set to fix the weight, reps, or reps-left. PRs, estimated 1RM, and next-session targets update automatically. Dumbbell weights are per hand.</div>
+    ${sessionsHtml(12)}</div>
   <button class="btn-secondary" id="closeReview" style="width:100%">Close</button>`;
   v.classList.add('active'); hideViewsExcept('reviewView');
   $('sumText').value = buildSummary(14);
   $('sumCopy').onclick = async () => { const tx = $('sumText').value; try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(tx); $('sumStatus').textContent = 'Copied — paste it to your coach.'; return; } } catch (e) {} try { const ta = $('sumText'); ta.removeAttribute && ta.removeAttribute('readonly'); ta.select && ta.select(); const okc = document.execCommand && document.execCommand('copy'); ta.setAttribute && ta.setAttribute('readonly', ''); $('sumStatus').textContent = okc ? 'Copied — paste it to your coach.' : 'Select the text and copy it.'; } catch (e) { $('sumStatus').textContent = 'Select the text and copy it.'; } };
   $('sumShare').onclick = async () => { try { if (navigator.share) { await navigator.share({ title: 'Work Gym summary', text: $('sumText').value }); $('sumStatus').textContent = 'Shared.'; return; } } catch (e) { if (e && e.name === 'AbortError') return; } $('sumCopy').onclick(); };
   $('closeReview').onclick = () => { v.classList.remove('active'); setTab('train'); };
+  bindSetEdits(() => showReview());
 }
 function buildSummary(days) {
   const t = todayLocal(), from = addDays(t, -(days - 1)), s = readSettings();
@@ -2342,6 +2357,238 @@ function setTab(name) {
 }
 function tabTrain() { setTab('train'); hideViewsExcept(null); if (currentDayKey && currentPlan.days.some(d => d.key === currentDayKey)) selectDay(currentDayKey); renderDeloadBanner(); }
 function tabMore() { const open = !$('moreMenu').classList.contains('open'); setTab(open ? 'more' : 'train'); }
+
+
+
+// ---------- v4.1: edit logged sets (history lives in workGymHistory) ----------
+function setLabel(s) {
+  if (!s) return '';
+  const w = +s.weight || 0;
+  return (w > 0 ? w + '×' : '') + (s.reps || 0) + (s.timed ? 's' : '') + rirText(s) + (s.pr ? ' 🏆' : '');
+}
+function writeHistory(H) {
+  localStorage.setItem('workGymHistory', JSON.stringify((H || []).slice(0, HISTORY_CAP)));
+}
+function historyChrono(H) {
+  return (H || []).map((h, hi) => ({ h, hi, t: Date.parse(h && h.date) })).sort((a, b) => {
+    const at = isNaN(a.t) ? 0 : a.t, bt = isNaN(b.t) ? 0 : b.t;
+    return at - bt || b.hi - a.hi; // older first; equal dates: higher index (older unshift) first
+  });
+}
+function recomputePRs(onlyName) {
+  const H = readHistory();
+  const best = {};
+  historyChrono(H).forEach(({ h }) => {
+    (Array.isArray(h && h.sets) ? h.sets : []).forEach(s => {
+      if (!s || !s.ex || (onlyName && s.ex !== onlyName)) return;
+      const w = +s.weight || 0, r = +s.reps || 0, isT = !!s.timed;
+      const prev = best[s.ex] || { e1rm: 0, reps: 0, secs: 0, n: 0 };
+      let isPr = false;
+      if (prev.n) {
+        if (w > 0) { const e = e1rm(w, r); if (e > prev.e1rm + 0.01 && prev.e1rm > 0) isPr = true; }
+        else if (isT) { if (r > prev.secs && prev.secs > 0) isPr = true; }
+        else if (r > prev.reps && prev.reps > 0) isPr = true;
+      }
+      if (isPr) s.pr = true; else if ('pr' in s) delete s.pr;
+      const b = best[s.ex] || { e1rm: 0, reps: 0, secs: 0, n: 0 };
+      b.n++;
+      if (w > 0) b.e1rm = Math.max(b.e1rm, e1rm(w, r));
+      else if (isT) b.secs = Math.max(b.secs, r);
+      else b.reps = Math.max(b.reps, r);
+      best[s.ex] = b;
+    });
+  });
+  writeHistory(H);
+  return H;
+}
+function parseSetNum(v) {
+  if (v == null || v === '') return 0;
+  const n = +v;
+  return isFinite(n) && n >= 0 ? n : null;
+}
+function editHistorySet(hi, si, patch) {
+  const H = readHistory();
+  const rec = H[hi] && Array.isArray(H[hi].sets) ? H[hi].sets[si] : null;
+  if (!rec || !patch) return false;
+  if ('weight' in patch) { const n = parseSetNum(patch.weight); if (n == null) return false; rec.weight = n; }
+  if ('reps' in patch) { const n = parseSetNum(patch.reps); if (n == null) return false; rec.reps = n; }
+  if ('rir' in patch) {
+    if (patch.rir == null || patch.rir === '') delete rec.rir;
+    else { const n = parseSetNum(patch.rir); if (n == null) return false; rec.rir = n; }
+  }
+  writeHistory(H);
+  recomputePRs(rec.ex);
+  return true;
+}
+function deleteHistorySet(hi, si) {
+  const H = readHistory();
+  if (!H[hi] || !Array.isArray(H[hi].sets) || !H[hi].sets[si]) return false;
+  const name = H[hi].sets[si].ex;
+  H[hi].sets.splice(si, 1);
+  let n = 0;
+  H[hi].sets.forEach(s => { if (s && s.ex === name) s.set = ++n; });
+  writeHistory(H);
+  recomputePRs(name);
+  return true;
+}
+function sessionsHtml(limit) {
+  const H = readHistory();
+  if (!H.length) return '<div class="prog-sub">No workouts logged yet.</div>';
+  return H.slice(0, limit != null ? limit : H.length).map((h, hi) => {
+    const sets = Array.isArray(h && h.sets) ? h.sets : [];
+    const groups = [];
+    sets.forEach((s, si) => {
+      if (!s) return;
+      let g = groups.find(x => x.ex === s.ex);
+      if (!g) { g = { ex: s.ex, items: [] }; groups.push(g); }
+      g.items.push({ s, si });
+    });
+    const lines = groups.map(g => `<div class="hist-ex"><span style="color:var(--text)">${esc(g.ex)}</span>: ${g.items.map(({ s }) => (s.weight ? esc(s.weight) + "×" : "") + esc(s.reps) + (s.timed ? "s" : "")).join(", ")}<div class="set-btns">${g.items.map(({ s, si }) => `<button type="button" class="set-chip" id="edset-${hi}-${si}">${esc(setLabel(s).replace(' 🏆', ''))}${s.pr ? ' <span class="pr">🏆</span>' : ''}</button>`).join('')}</div></div>`).join('');
+    return `<div class="hist-item"><strong>${esc(shortDate(h.date))}</strong> – ${esc(h.day || '')} (${esc(h.duration != null ? h.duration : '?')} min)${lines || '<div class="hist-ex">No sets recorded</div>'}</div>`;
+  }).join('');
+}
+function bindSetEdits(onClose) {
+  readHistory().forEach((h, hi) => (Array.isArray(h && h.sets) ? h.sets : []).forEach((s, si) => {
+    const b = $('edset-' + hi + '-' + si);
+    if (b) b.onclick = () => openEditSet(hi, si, onClose);
+  }));
+}
+let editReturn = null;
+function openEditSet(hi, si, onClose) {
+  editReturn = onClose || null;
+  const H = readHistory();
+  const rec = H[hi] && Array.isArray(H[hi].sets) ? H[hi].sets[si] : null;
+  if (!rec) return;
+  const timed = !!rec.timed;
+  const v = $('editView'); if (!v) return;
+  const rirOn = n => (rec.rir === n || (n === 3 && rec.rir >= 3)) ? ' on' : '';
+  const db = /dumbbell|\bdb\b/i.test(rec.ex || '');
+  v.innerHTML = `<h3 style="margin:6px 0 8px">Edit set</h3>
+    <div class="prog-sub">${esc(shortDate(H[hi].date))} • ${esc(H[hi].day || '')}</div>
+    <div class="ci-card">
+      <h3>${esc(rec.ex)}</h3>
+      <div class="prog-sub">Set ${esc(rec.set != null ? rec.set : si + 1)}${rec.pr ? ' • 🏆 currently flagged as a PR' : ''}</div>
+      ${db ? '<div class="prog-sub">Weight is per hand (lb).</div>' : ''}
+      <div class="food-grid" style="margin-top:10px">
+        <label>Weight (lb)<input type="number" inputmode="decimal" id="edWeight" step="0.5" min="0" value="${timed ? '' : esc(rec.weight != null && rec.weight !== '' ? rec.weight : '')}" ${timed ? 'disabled' : ''}></label>
+        <label>${timed ? 'Seconds' : 'Reps'}<input type="number" inputmode="numeric" id="edReps" step="1" min="0" value="${esc(rec.reps != null ? rec.reps : '')}"></label>
+      </div>
+      ${timed ? '' : `<div class="q-label">Reps left in the tank?</div>
+      <div class="rir-btns" id="edRirBtns">
+        <button type="button" id="edRir0"${rirOn(0)}>0</button>
+        <button type="button" id="edRir1"${rirOn(1)}>1</button>
+        <button type="button" id="edRir2"${rirOn(2)}>2</button>
+        <button type="button" id="edRir3"${rirOn(3)}>3+</button>
+        <button type="button" id="edRirClear" class="skip">Clear</button>
+      </div>`}
+    </div>
+    <button class="big btn-done" id="edSave" style="margin-top:14px">Save</button>
+    <button type="button" class="edit-del" id="edDelete">Delete this set</button>
+    <button class="btn-secondary" id="edCancel" style="width:100%;margin-top:8px">Cancel</button>`;
+  v.classList.add('active');
+  let rirVal = rec.rir != null && rec.rir !== '' ? +rec.rir : '';
+  const markRir = () => { [0, 1, 2, 3].forEach(n => { const b = $('edRir' + n); if (b) b.classList.toggle('on', rirVal === n || (n === 3 && rirVal >= 3)); }); };
+  if (!timed) {
+    $('edRir0').onclick = () => { rirVal = 0; markRir(); };
+    $('edRir1').onclick = () => { rirVal = 1; markRir(); };
+    $('edRir2').onclick = () => { rirVal = 2; markRir(); };
+    $('edRir3').onclick = () => { rirVal = 3; markRir(); };
+    $('edRirClear').onclick = () => { rirVal = ''; markRir(); };
+  }
+  $('edSave').onclick = () => {
+    const patch = { reps: $('edReps').value };
+    if (!timed) { patch.weight = $('edWeight').value; patch.rir = rirVal === '' ? null : rirVal; }
+    if (!editHistorySet(hi, si, patch)) { alert('Enter a valid weight and reps (0 or more).'); return; }
+    toast('Set updated');
+    closeEditSet();
+  };
+  $('edDelete').onclick = () => {
+    if (!confirm('Delete this set? This cannot be undone.')) return;
+    if (!deleteHistorySet(hi, si)) { alert('Could not delete that set.'); return; }
+    toast('Set deleted');
+    closeEditSet();
+  };
+  $('edCancel').onclick = closeEditSet;
+}
+function closeEditSet() {
+  const v = $('editView'); if (v) v.classList.remove('active');
+  if (typeof editReturn === 'function') editReturn();
+}
+
+function showHistory() {
+  const view = $('historyView');
+  const H = readHistory();
+  view.innerHTML = '<h3 style="margin:6px 0">Workout History</h3>' +
+    `<div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px">${H.length} workout(s) saved (keeps up to ${HISTORY_CAP}). Tap a set to edit weight, reps, or reps-left.</div>` +
+    (H.length ? sessionsHtml() : '<p>No workouts logged yet.</p>') +
+    '<button class="btn-secondary" id="closeHist" style="width:100%;margin-top:8px">Close</button>';
+  view.classList.add('active');
+  hideViewsExcept('historyView');
+  bindSetEdits(() => showHistory());
+  $('closeHist').onclick = () => { view.classList.remove('active'); tabTrain(); };
+}
+
+function exerciseChartHtml(name) {
+  const pts = exerciseSeries(name);
+  const sessions = [];
+  readHistory().forEach((h, hi) => {
+    const items = (Array.isArray(h && h.sets) ? h.sets : []).map((s, si) => s && s.ex === name ? { s, si } : null).filter(Boolean);
+    if (items.length) sessions.push({ h, hi, items });
+  });
+  if (!pts.length && !sessions.length) return `<div class="prog-sub">No history yet for ${esc(name)}. Log it once and the trend starts here.</div>`;
+  let head = '';
+  if (pts.length) {
+    const kind = pts[pts.length - 1].kind;
+    const unit = kind === 'weight' ? 'Top set (lb)' : kind === 'seconds' ? 'Longest hold (s)' : 'Best set (reps)';
+    const best = pts.reduce((a, p) => (p.y > a.y || (p.y === a.y && (p.reps || 0) > (a.reps || 0))) ? p : a, pts[0]);
+    head = `<div class="prog-sub">${unit} • ${pts.length} session(s) • best ${esc(best.label)}</div><div class="chart">${svgChart(pts, { label: name })}</div>`;
+  }
+  const rows = sessions.slice(0, 8).map(({ h, hi, items }) =>
+    `<div><span>${esc(shortDate(h.date))}</span><span class="set-btns">${items.map(({ s, si }) => `<button type="button" class="set-chip" id="edset-${hi}-${si}">${esc(setLabel(s).replace(' 🏆', ''))}${s.pr ? ' <span class="pr">🏆</span>' : ''}</button>`).join('')}</span></div>`
+  ).join('');
+  return head + `<div class="prog-sub">Tap a set to edit it.</div><div class="prog-list">${rows}</div>`;
+}
+
+function showProgress(sel) {
+  const v = $('progressView');
+  const bw = readBodyweight();
+  const names = historyExerciseNames();
+  if (sel) progSelected = sel;
+  if (!progSelected || !names.includes(progSelected)) progSelected = names[0] || null;
+  const first = bw[0], last = bw[bw.length - 1];
+  const diff = first && last && bw.length > 1 ? Math.round((last.lb - first.lb) * 10) / 10 : null;
+  const bwPts = bw.map(e => ({ t: Date.parse(e.date + 'T12:00:00'), d: e.date, y: e.lb, label: e.lb + ' lb' }));
+  const s = readSettings();
+  const goalLines = [{ y: s.goal1, label: 'goal ' + s.goal1, color: '#ffd166' }, { y: s.goal2, label: String(s.goal2), color: '#c9b8ff' }];
+  v.innerHTML = `<h3 style="margin:6px 0 8px">Progress</h3>
+    <div class="prog-card"><h4>Bodyweight</h4>
+      ${last ? `<div class="prog-big">${esc(last.lb)} lb <span class="prog-sub">${esc(shortDate(last.date))}${diff != null ? ` • ${diff > 0 ? '+' : ''}${diff} lb since ${esc(shortDate(first.date))}` : ''}</span></div>` : '<div class="prog-sub">Log your weight (same time of day is best — e.g. after waking, before eating).</div>'}
+      <div class="bw-row"><input type="number" inputmode="decimal" id="bwInput" placeholder="${last ? esc(last.lb) : '215'}" step="0.1" min="60" max="700"><input type="date" id="bwDate" value="${todayLocal()}"><button id="bwLog">Log</button></div>
+      <div class="chart" id="bwChart">${bw.length ? svgChart(bwPts, { label: 'Bodyweight', lines: goalLines }) : ''}</div>
+      <div class="prog-list">${bw.slice(-8).reverse().map(e => `<div><span>${esc(shortDate(e.date))}</span><span style="color:var(--text)">${esc(e.lb)} lb</span><button data-date="${esc(e.date)}" class="bw-del" aria-label="Delete">✕</button></div>`).join('')}</div>
+    </div>
+    <div class="prog-card"><h4>Exercises</h4>
+      ${names.length ? `<select id="progSelect">${names.map(n => `<option value="${esc(n)}"${n === progSelected ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>
+      <div id="progExercise">${exerciseChartHtml(progSelected)}</div>` : '<div class="prog-sub">No workouts logged yet.</div>'}
+    </div>
+    <button class="btn-secondary" id="closeProgress" style="width:100%">Close</button>`;
+  v.classList.add('active');
+  hideViewsExcept('progressView');
+  $('bwLog').onclick = () => {
+    if (logBodyweight($('bwInput').value, $('bwDate').value)) { toast('Bodyweight saved'); showProgress(); }
+    else alert('Enter your weight in lb (e.g. 214.6).');
+  };
+  if (names.length) $('progSelect').onchange = () => { progSelected = $('progSelect').value; $('progExercise').innerHTML = exerciseChartHtml(progSelected); bindSetEdits(() => showProgress()); };
+  document.querySelectorAll('.bw-del').forEach(b => { b.onclick = () => { if (confirm('Delete the ' + shortDate(b.dataset.date) + ' weigh-in?')) { deleteBodyweight(b.dataset.date); showProgress(); } }; });
+  $('closeProgress').onclick = () => { v.classList.remove('active'); tabTrain(); };
+  bindSetEdits(() => showProgress());
+}
+function toggleExChart() {
+  const c = $('exChart');
+  const on = !c.classList.contains('active');
+  c.classList.toggle('active', on);
+  if (on) { c.innerHTML = exerciseChartHtml(exAt(currentExIndex).name); bindSetEdits(() => toggleExChart()); }
+}
 
 function v4Init() {
   renderDeloadBanner();
