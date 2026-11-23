@@ -435,7 +435,7 @@
   <div id="checkinBox"></div>
 </div>
 
-<footer>Gym or Home • Form cues included • Definition cut • State persists • v5.3.1 (token paste fix • goal hints • github sync • private requests • one profile per phone • plan requests • intake • send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
+<footer>Gym or Home • Form cues included • Definition cut • State persists • v5.3.2 (assign after create • token paste fix • goal hints • github sync • private requests • one profile per phone • plan requests • intake • send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
 
 <script>
 // ======================= v5: one profile per phone =======================
@@ -447,7 +447,7 @@
 const WG5 = { REG: 'wg5Profiles', DEVICE: 'wg5Device', MIG: 'wg5Migrated', PREFIX: 'wg5:' };
 // v5.1: plan requests (and any workout logs) go to the PRIVATE data repo; the app itself stays on the public workgym Pages site.
 const WG_REPO = 'Adalderson/workgym-data', WG_ASSIGNEE = 'Adalderson', WG_SITE = 'https://adalderson.github.io/workgym/';
-const WG_VERSION = 'v5.3.1';
+const WG_VERSION = 'v5.3.2';
 const LEGACY_KEYS = ['workGymHistory', 'workGymMode', 'workGymPlan', 'workGymState', 'workGymBodyweight', 'workGymLastBackup', 'workGymNutrition', 'workGymSettings'];
 const INTAKE_KEY = 'workGymIntake';
 const REQ_NOTE = 'Plan requests are checked daily at 8 PM Eastern (ET), and usually picked up right away.';
@@ -1115,9 +1115,22 @@ async function ghFetch(path, opts) {
   }
   return { ok: true, status: res.status, data };
 }
+// v5.3.2: create the issue WITHOUT assignees, then assign in a separate call so GitHub emits a real 'assigned'
+// event for the coach's wake-up trigger. Once the issue exists the post counts as done (never re-posted); a failed
+// assign is remembered and retried on the next sync run.
+async function ghAssign(number, assignees) {
+  if (!number || !assignees || !assignees.length) return { ok: true };
+  const r = await ghFetch(`/repos/${WG_REPO}/issues/${number}/assignees`, { method: 'POST', body: JSON.stringify({ assignees }) });
+  return r.ok ? { ok: true } : r;
+}
 async function ghCreateIssue(issue) {
-  const r = await ghFetch(`/repos/${WG_REPO}/issues`, { method: 'POST', body: JSON.stringify(issue) });
-  return r.ok ? { ok: true, number: r.data && r.data.number, url: r.data && r.data.html_url } : r;
+  const assignees = (issue && issue.assignees) || [];
+  const body = Object.assign({}, issue); delete body.assignees;
+  const r = await ghFetch(`/repos/${WG_REPO}/issues`, { method: 'POST', body: JSON.stringify(body) });
+  if (!r.ok) return r;
+  const out = { ok: true, number: r.data && r.data.number, url: r.data && r.data.html_url, assigned: true };
+  if (assignees.length) { const a = await ghAssign(out.number, assignees); if (!a.ok) { out.assigned = false; out.assignError = a.error; } }
+  return out;
 }
 async function ghTestRepo() {
   const r = await ghFetch(`/repos/${WG_REPO}`, { method: 'GET' });
@@ -1149,9 +1162,9 @@ function enqueueSession(h) {
   q.push({ id, at: new Date().toISOString(), attempts: 0, status: 'queued' });
   writeSyncQueue(q); return true;
 }
-function markSynced(id, issue, url) {
+function markSynced(id, issue, url, assigned) {
   const H = readHistory(); let hit = false;
-  H.forEach(h => { if (h && sessionSyncId(h) === id) { h.sync = { issue, url: url || null, at: new Date().toISOString() }; hit = true; } });
+  H.forEach(h => { if (h && sessionSyncId(h) === id) { h.sync = { issue, url: url || null, at: new Date().toISOString() }; if (assigned === false) h.sync.assigned = false; hit = true; } });
   if (hit) writeHistory(H);
   writeSyncQueue(readSyncQueue().filter(x => x.id !== id));
   return hit;
@@ -1161,7 +1174,7 @@ async function findExistingLog(id) {
   const r = await ghFetch(`/repos/${WG_REPO}/issues?labels=workout-log&state=all&per_page=100`, { method: 'GET' });
   if (!r.ok || !Array.isArray(r.data)) return r.ok ? null : { error: r };
   const hit = r.data.find(i => i && typeof i.body === 'string' && i.body.indexOf(`<!-- wg-session: ${id} -->`) >= 0);
-  return hit ? { number: hit.number, url: hit.html_url } : null;
+  return hit ? { number: hit.number, url: hit.html_url, assigned: Array.isArray(hit.assignees) ? hit.assignees.some(u => u && String(u.login).toLowerCase() === WG_ASSIGNEE.toLowerCase()) : undefined } : null;
 }
 // Posts every queued session once, in order. Only one run at a time; nothing is ever posted twice.
 function processSyncQueue(why) {
@@ -1176,17 +1189,23 @@ function processSyncQueue(why) {
       const prev = readSyncQueue().find(x => x.id === item.id) || item;
       if (prev.attempts > 0) {
         const found = await findExistingLog(item.id);
-        if (found && found.number) { markSynced(item.id, found.number, found.url); out.deduped++; continue; }
+        if (found && found.number) { markSynced(item.id, found.number, found.url, found.assigned === false ? false : undefined); out.deduped++; continue; }
         if (found && found.error && !found.error.offline) { const q1 = readSyncQueue(); const i1 = q1.find(x => x.id === item.id); if (i1) { i1.status = 'failed'; i1.error = 'could not check for an earlier copy: ' + found.error.error; writeSyncQueue(q1); } out.failed++; break; } // never risk a duplicate
         if (found && found.error && found.error.offline) { const q0 = readSyncQueue(); const i0 = q0.find(x => x.id === item.id); if (i0) { i0.status = 'queued'; i0.error = 'offline'; writeSyncQueue(q0); } out.queued++; break; }
       }
       const res = await ghCreateIssue({ title: workoutLogTitle(h), body: workoutLogBody(h), labels: ['workout-log', 'profile:' + activeProfileName()], assignees: [WG_ASSIGNEE] });
-      if (res.ok) { markSynced(item.id, res.number, res.url); out.posted++; continue; }
+      if (res.ok) { markSynced(item.id, res.number, res.url, res.assigned); out.posted++; continue; }
       const q = readSyncQueue(); const it = q.find(x => x.id === item.id);
       if (it) { it.attempts = (it.attempts || 0) + 1; it.status = res.offline ? 'queued' : 'failed'; it.error = res.error; it.lastTry = new Date().toISOString(); writeSyncQueue(q); }
       if (res.offline) { out.queued++; break; }           // offline: keep everything for the next open/workout
       out.failed++;
       if (res.status === 401 || res.status === 403 || res.status === 404 || res.status === 429) break; // token/permission/rate problem: stop
+    }
+    // retry assignment for issues that were created but not assigned (no new issue is ever created here)
+    if (!out.queued) for (const h of readHistory().filter(x => x && x.sync && x.sync.issue && x.sync.assigned === false)) {
+      const a = await ghAssign(h.sync.issue, [WG_ASSIGNEE]);
+      if (!a.ok) break;
+      const H = readHistory(); H.forEach(x => { if (x && x.sync && x.sync.issue === h.sync.issue) delete x.sync.assigned; }); writeHistory(H); out.assignedLater = (out.assignedLater || 0) + 1;
     }
     return out;
   })().finally(() => { syncRun = null; renderSyncChips(); });

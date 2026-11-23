@@ -1,5 +1,12 @@
 # Work Gym changelog
 
+## v5.3.2 (2026-11-23): assign after create
+
+- With a GitHub token, workout logs and plan requests are now created without assignees. The app then assigns Adalderson in a separate call (`POST /issues/{n}/assignees`), so GitHub emits a real "assigned" event for the coach's wake-up.
+- Once an issue exists it is never posted again. If only the assign step fails, the session stays synced and the assignment is retried on the next app open or workout. An issue found again after a lost response gets assigned too.
+- The no-token prefilled-link path is unchanged (it still pre-fills `assignees=Adalderson`).
+- Footer v5.3.2, SW cache `workgym-v5.3.2`. v5.3.1 is kept as downloads/workout-app-v5.3.1.html.
+
 ## v5.3.1 (2026-11-23): GitHub token paste fix
 
 - Fixes "That doesn't look like a GitHub token" when saving a pasted token on Android. Save now strips spaces, line breaks, zero-width and other invisible characters, quotes and a "Bearer " prefix, and fixes a keyboard-capitalised "Github_pat_".
