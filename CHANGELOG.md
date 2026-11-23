@@ -1,5 +1,14 @@
 # Work Gym changelog
 
+## v5.2 (2026-11-23): optional GitHub sync (silent auto-push)
+
+- New **Settings > GitHub sync** card. Paste a fine-grained token limited to **Adalderson/workgym-data** (Issues: Read and write, Metadata: Read-only). The token is stored on that phone only (device-level, never in backups or exports, never in the repo), shown as ••••last4, with **Test** (reads the repo), **Sync all unsynced history** and **Remove**. Reset this phone also removes it.
+- With a token, tapping **Done** silently opens an issue in workgym-data: `[Workout log] <Profile> <YYYY-MM-DD> <session>`, labels `workout-log` + `profile:<name>`, assigned to Adalderson, body = `Profile:` line + the Send to Coach summary + the session JSON.
+- Offline or failed posts are queued on the phone and retried on the next app open or workout. A chip shows Synced #n / Queued / Sync failed on the Done screen and in History. Each session is marked with its issue number and carries a hidden session id, so a session is never posted twice (even if a response was lost).
+- With a token, **Request new plan** posts straight to the repo (assigned to Adalderson) and falls back to the prefilled GitHub page if that fails.
+- Without a token, everything works exactly as v5.1.
+- Footer v5.2, SW cache `workgym-v5.2`. The backup format stays 5. v5.1 is kept as downloads/workout-app-v5.1.html.
+
 ## v5.1 (2026-11-23): requests go to a private repo
 
 - Plan requests now open a new issue in the **private** repo **Adalderson/workgym-data** (https://github.com/Adalderson/workgym-data). It has the labels `plan-request`, `workout-log`, `profile:Adam` and `profile:Julie`, and its own `plan-request` issue template, assigned to Adalderson. The app still runs from the public workgym Pages site.

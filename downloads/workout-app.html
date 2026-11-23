@@ -266,6 +266,11 @@
   .req-note { margin-top:10px; background:#2a2615; border-left:4px solid #ffd166; border-radius:10px; padding:8px 10px; font-size:0.82rem; color:#ffe6a6; text-align:left; }
   .intake-view,.request-view { display:none; position:fixed; inset:0; z-index:150; background:#05080c; overflow-y:auto; padding:16px 14px 40px; }
   .intake-view.active,.request-view.active { display:block; }
+  .sync-chip { display:inline-block; margin-top:8px; padding:4px 10px; border-radius:999px; font-size:0.78rem; font-weight:700; }
+  .sync-chip.ok { background:#163a32; color:var(--accent); } .sync-chip.q { background:#2a2615; color:#ffd166; } .sync-chip.bad { background:#3a1e1e; color:#ff8a8a; } .sync-chip.none { background:#22303f; color:var(--muted); }
+  #syncChip { text-align:center; min-height:0; }
+  .tok-steps { margin:8px 0 0 18px; font-size:0.78rem; color:var(--muted); line-height:1.4; }
+  .sync-err { background:#3a1e1e; color:#ff8a8a; border-radius:10px; padding:8px 10px; font-size:0.82rem; margin-bottom:8px; }
   .req-private { margin-top:8px; background:#14261f; border-left:4px solid var(--accent); border-radius:10px; padding:8px 10px; font-size:0.78rem; color:#bff3e4; text-align:left; }
   .ik-card { background:var(--card); border-radius:14px; padding:16px 14px; max-width:480px; margin:0 auto; }
   .ik-card h3 { margin:0 0 8px; }
@@ -420,11 +425,12 @@
   <h2>Done!</h2>
   <p id="summaryText"></p>
   <button class="big btn-done" id="btnSendCoach" style="margin-top:14px;width:100%">Send to Coach</button>
+  <div id="syncChip"></div>
   <button class="btn-secondary" id="backHome" style="width:100%;margin-top:8px">Back</button>
   <div id="checkinBox"></div>
 </div>
 
-<footer>Gym or Home • Form cues included • Definition cut • State persists • v5.1 (private requests • one profile per phone • plan requests • intake • send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
+<footer>Gym or Home • Form cues included • Definition cut • State persists • v5.2 (github sync • private requests • one profile per phone • plan requests • intake • send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
 
 <script>
 // ======================= v5: one profile per phone =======================
@@ -436,7 +442,7 @@
 const WG5 = { REG: 'wg5Profiles', DEVICE: 'wg5Device', MIG: 'wg5Migrated', PREFIX: 'wg5:' };
 // v5.1: plan requests (and any workout logs) go to the PRIVATE data repo; the app itself stays on the public workgym Pages site.
 const WG_REPO = 'Adalderson/workgym-data', WG_ASSIGNEE = 'Adalderson', WG_SITE = 'https://adalderson.github.io/workgym/';
-const WG_VERSION = 'v5.1';
+const WG_VERSION = 'v5.2';
 const LEGACY_KEYS = ['workGymHistory', 'workGymMode', 'workGymPlan', 'workGymState', 'workGymBodyweight', 'workGymLastBackup', 'workGymNutrition', 'workGymSettings'];
 const INTAKE_KEY = 'workGymIntake';
 const REQ_NOTE = 'Plan requests are checked daily at 8 PM Eastern (ET), and usually picked up right away.';
@@ -525,6 +531,7 @@ function wgBoot() {
 }
 function wgEnterProfile(p) {
   if (wgStarted) return false; // locked for the life of this page: no switching
+  v52Install();
   activeProfile = Object.assign({}, p, { builtin: !!p.builtin || p.id === 'adam' });
   nsPrefix = profileKeyPrefix(activeProfile.id);
   wgStarted = true;
@@ -551,6 +558,7 @@ function applyProfileChrome() {
 }
 function v5Init() {
   renderStarter();
+  if (ghToken()) processSyncQueue('open'); // retry anything queued from last time
   if ($('btnRequestPlan')) $('btnRequestPlan').onclick = () => openRequest({});
   if ($('btnIntake')) $('btnIntake').onclick = () => openIntake({ mode: 'edit' });
   if ($('btnInvite')) $('btnInvite').onclick = shareInvite;
@@ -867,10 +875,35 @@ function buildPlanRequestUrl(req) {
 function submitRequest(req) {
   if (!activeProfile) return null;
   const r = buildPlanRequestUrl(req);
+  if (ghToken()) { r.fullBody = planRequestBody(req, { trainingLines: recentTrainingLines(14) }); return submitRequestApi(r); }
   let w = null;
   try { w = window.open(r.url, '_blank', 'noopener'); } catch (e) {}
   showRequestSent(r, !!w);
   return r;
+}
+// v5.2: with a token, post the request straight to the private repo; on any failure fall back to the prefilled URL.
+async function submitRequestApi(r) {
+  const v = $('requestView'); if (v && $('rqGo')) { $('rqGo').textContent = 'Sending…'; $('rqGo').disabled = true; }
+  const res = await ghCreateIssue({ title: r.title, body: r.fullBody || r.body, labels: r.labels, assignees: r.assignees });
+  if (res.ok) { r.issue = res.number; r.issueUrl = res.url; showRequestPosted(r); return r; }
+  r.apiError = res.error;
+  let w = null;
+  try { w = window.open(r.url, '_blank', 'noopener'); } catch (e) {}
+  showRequestSent(r, !!w);
+  const n = $('requestView'); if (n) n.innerHTML = n.innerHTML.replace('<h3>', `<div class="sync-err">Couldn't send it directly (${esc(res.error)}). Opening GitHub instead.</div><h3>`);
+  if ($('rqDone')) $('rqDone').onclick = closeRequest;
+  return r;
+}
+function showRequestPosted(r) {
+  const v = $('requestView'); if (!v) return;
+  v.innerHTML = `<div class="ik-card"><h3>Request sent ✓</h3>
+    <div class="prog-sub" style="margin-bottom:8px">Posted to the private repo as <b style="color:var(--text)">#${esc(r.issue)}</b> and assigned to Adam. Nothing else to do.</div>
+    <a class="big btn-done ik-link" href="${esc(r.issueUrl || '')}" target="_blank" rel="noopener">View request #${esc(r.issue)}</a>
+    <div class="req-note">🕗 ${esc(REQ_NOTE)}</div>
+    <div class="prog-sub" style="margin-top:6px">Request for <b style="color:var(--text)">${esc(activeProfileName())}</b>: ${esc(r.title)}.</div>
+    <button type="button" class="btn-secondary" id="rqDone" style="width:100%">Done</button></div>`;
+  v.classList.add('active');
+  $('rqDone').onclick = closeRequest;
 }
 function showRequestSent(r, opened) {
   const v = $('requestView'); if (!v) return;
@@ -909,6 +942,7 @@ async function resetThisPhone() {
   }
   clearState();
   localStorage.removeItem(WG5.DEVICE);
+  localStorage.removeItem(GH_TOKEN_KEY); // the phone may be changing hands
   nsPrefix = null; // nothing else gets written for this profile on this page
   try { location.replace(location.pathname); } catch (e) {}
   return 'reset';
@@ -1033,6 +1067,185 @@ function setSchedule(patch) {
 function bindSchedule() {
   [2, 3, 4, 5, 6].forEach(n => { const b = $('sDays-' + n); if (b) b.onclick = () => setSchedule({ daysPerWeek: n }); });
   [30, 45, 60, 75, 90].forEach(n => { const b = $('sLen-' + n); if (b) b.onclick = () => setSchedule({ sessionLength: n }); });
+}
+
+// ======================= v5.2: GitHub sync (silent auto-push of workout logs) =======================
+// Optional. A fine-grained token limited to Adalderson/workgym-data (Issues: read/write, Metadata: read) is stored on
+// this phone only (device-level localStorage, never in backups/exports). With no token, nothing here runs.
+const GH_TOKEN_KEY = 'wg5GhToken', GH_API = 'https://api.github.com', SYNC_QUEUE_KEY = 'workGymSyncQueue';
+let syncRun = null, v52Installed = false;
+function setTimeout0(f) { try { return setTimeout(f, 0); } catch (e) { f(); } }
+function ghToken() { try { const t = localStorage.getItem(GH_TOKEN_KEY); return t && t.trim() ? t.trim() : null; } catch (e) { return null; } }
+function ghTokenTail() { const t = ghToken(); return t ? t.slice(-4) : ''; }
+async function ghFetch(path, opts) {
+  const t = ghToken(); if (!t) return { ok: false, status: 0, error: 'no token' };
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return { ok: false, status: 0, offline: true, error: 'offline' };
+  let res;
+  try {
+    res = await fetch(GH_API + path, Object.assign({ cache: 'no-store' }, opts || {}, { headers: Object.assign({ 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + t, 'X-GitHub-Api-Version': '2022-11-28' }, (opts && opts.body) ? { 'Content-Type': 'application/json' } : {}) }));
+  } catch (e) { return { ok: false, status: 0, offline: true, error: 'network error' }; }
+  let data = null; try { data = JSON.parse(await res.text()); } catch (e) {}
+  if (!res.ok) {
+    const msg = (data && data.message) || ('HTTP ' + res.status);
+    return { ok: false, status: res.status, error: res.status === 401 ? 'token rejected (401)' : res.status === 404 ? 'repo not found for this token (404)' : res.status === 403 ? 'not allowed (403): ' + msg : msg + ' (' + res.status + ')', data };
+  }
+  return { ok: true, status: res.status, data };
+}
+async function ghCreateIssue(issue) {
+  const r = await ghFetch(`/repos/${WG_REPO}/issues`, { method: 'POST', body: JSON.stringify(issue) });
+  return r.ok ? { ok: true, number: r.data && r.data.number, url: r.data && r.data.html_url } : r;
+}
+async function ghTestRepo() {
+  const r = await ghFetch(`/repos/${WG_REPO}`, { method: 'GET' });
+  if (!r.ok) return r;
+  return { ok: true, name: r.data && r.data.full_name, private: !!(r.data && r.data.private), push: !!(r.data && r.data.permissions && r.data.permissions.push) };
+}
+// ----- sessions -> issues -----
+function sessionSyncId(h) { return (activeProfile ? activeProfile.id : '?') + ':' + (h && (h.startedAt || h.date)) + ':' + (h && h.date); }
+function workoutLogTitle(h) { return `[Workout log] ${activeProfileName()} ${localDay(h.date) || '?'} ${String((h && h.day) || 'Workout').slice(0, 80)}`; }
+function workoutLogBody(h) {
+  const mins = sessionDurationMins(h);
+  const plain = Object.assign({}, h); delete plain.sync;
+  return ['Profile: ' + activeProfileName(), 'Profile-ID: ' + (activeProfile ? activeProfile.id : ''), 'Date: ' + (localDay(h.date) || ''), 'Session: ' + (h.day || 'Workout'),
+    'Duration: ' + (mins != null ? mins + ' min' : '(unknown)'), 'Sent from: Work Gym ' + WG_VERSION + ' (auto-sync)', `<!-- wg-session: ${sessionSyncId(h)} -->`, '',
+    '## Summary', '', '```', buildSessionShare(h, mins), '```', '', '## Session JSON', '', '```json', JSON.stringify(plain, null, 2), '```'].join('\n');
+}
+function readSyncQueue() { try { const q = JSON.parse(PLS.getItem(SYNC_QUEUE_KEY) || '[]'); return Array.isArray(q) ? q.filter(x => x && x.id) : []; } catch (e) { return []; } }
+function writeSyncQueue(q) { PLS.setItem(SYNC_QUEUE_KEY, JSON.stringify(q)); }
+function syncStatusOf(h) {
+  if (h && h.sync && h.sync.issue) return { state: 'synced', issue: h.sync.issue, url: h.sync.url };
+  const q = readSyncQueue().find(x => x.id === sessionSyncId(h));
+  if (q) return { state: q.status === 'failed' ? 'failed' : 'queued', error: q.error || '' };
+  return { state: 'none' };
+}
+function enqueueSession(h) {
+  if (!h || (h.sync && h.sync.issue)) return false;
+  const id = sessionSyncId(h), q = readSyncQueue();
+  if (q.some(x => x.id === id)) return false;
+  q.push({ id, at: new Date().toISOString(), attempts: 0, status: 'queued' });
+  writeSyncQueue(q); return true;
+}
+function markSynced(id, issue, url) {
+  const H = readHistory(); let hit = false;
+  H.forEach(h => { if (h && sessionSyncId(h) === id) { h.sync = { issue, url: url || null, at: new Date().toISOString() }; hit = true; } });
+  if (hit) writeHistory(H);
+  writeSyncQueue(readSyncQueue().filter(x => x.id !== id));
+  return hit;
+}
+// After a lost response the issue may already exist: look for its hidden session marker before posting again.
+async function findExistingLog(id) {
+  const r = await ghFetch(`/repos/${WG_REPO}/issues?labels=workout-log&state=all&per_page=100`, { method: 'GET' });
+  if (!r.ok || !Array.isArray(r.data)) return r.ok ? null : { error: r };
+  const hit = r.data.find(i => i && typeof i.body === 'string' && i.body.indexOf(`<!-- wg-session: ${id} -->`) >= 0);
+  return hit ? { number: hit.number, url: hit.html_url } : null;
+}
+// Posts every queued session once, in order. Only one run at a time; nothing is ever posted twice.
+function processSyncQueue(why) {
+  if (!ghToken() || nsPrefix == null) return Promise.resolve({ skipped: true });
+  if (syncRun) return syncRun;
+  syncRun = (async () => {
+    const out = { posted: 0, failed: 0, queued: 0, deduped: 0 };
+    for (const item of readSyncQueue()) {
+      const h = readHistory().find(x => x && sessionSyncId(x) === item.id);
+      if (!h) { writeSyncQueue(readSyncQueue().filter(x => x.id !== item.id)); continue; }
+      if (h.sync && h.sync.issue) { writeSyncQueue(readSyncQueue().filter(x => x.id !== item.id)); out.deduped++; continue; }
+      const prev = readSyncQueue().find(x => x.id === item.id) || item;
+      if (prev.attempts > 0) {
+        const found = await findExistingLog(item.id);
+        if (found && found.number) { markSynced(item.id, found.number, found.url); out.deduped++; continue; }
+        if (found && found.error && !found.error.offline) { const q1 = readSyncQueue(); const i1 = q1.find(x => x.id === item.id); if (i1) { i1.status = 'failed'; i1.error = 'could not check for an earlier copy: ' + found.error.error; writeSyncQueue(q1); } out.failed++; break; } // never risk a duplicate
+        if (found && found.error && found.error.offline) { const q0 = readSyncQueue(); const i0 = q0.find(x => x.id === item.id); if (i0) { i0.status = 'queued'; i0.error = 'offline'; writeSyncQueue(q0); } out.queued++; break; }
+      }
+      const res = await ghCreateIssue({ title: workoutLogTitle(h), body: workoutLogBody(h), labels: ['workout-log', 'profile:' + activeProfileName()], assignees: [WG_ASSIGNEE] });
+      if (res.ok) { markSynced(item.id, res.number, res.url); out.posted++; continue; }
+      const q = readSyncQueue(); const it = q.find(x => x.id === item.id);
+      if (it) { it.attempts = (it.attempts || 0) + 1; it.status = res.offline ? 'queued' : 'failed'; it.error = res.error; it.lastTry = new Date().toISOString(); writeSyncQueue(q); }
+      if (res.offline) { out.queued++; break; }           // offline: keep everything for the next open/workout
+      out.failed++;
+      if (res.status === 401 || res.status === 403 || res.status === 404 || res.status === 429) break; // token/permission/rate problem: stop
+    }
+    return out;
+  })().finally(() => { syncRun = null; renderSyncChips(); });
+  return syncRun;
+}
+function syncAllUnsynced() {
+  if (!ghToken()) { toast('Add a GitHub token in Settings first.'); return Promise.resolve({ skipped: true }); }
+  let n = 0; readHistory().slice().reverse().forEach(h => { if (enqueueSession(h)) n++; });
+  // retry failed ones too
+  const q = readSyncQueue(); q.forEach(x => { if (x.status === 'failed') x.status = 'queued'; }); writeSyncQueue(q);
+  toast(n ? `Syncing ${n} workout${n === 1 ? '' : 's'}…` : 'Retrying unsynced workouts…');
+  return processSyncQueue('all').then(r => { toast(r.posted ? `Synced ${r.posted} workout${r.posted === 1 ? '' : 's'}` : r.queued ? 'Offline: will sync later' : r.failed ? 'Sync failed: check Settings > GitHub sync' : 'Everything is synced'); return r; });
+}
+function chipHtml(st) {
+  if (st.state === 'synced') return `<span class="sync-chip ok">✓ Synced #${esc(st.issue)}</span>`;
+  if (st.state === 'queued') return `<span class="sync-chip q">⏳ Queued</span>`;
+  if (st.state === 'failed') return `<span class="sync-chip bad" title="${esc(st.error)}">⚠ Sync failed${st.error ? ': ' + esc(st.error) : ''}</span>`;
+  return `<span class="sync-chip none">Not synced</span>`;
+}
+function renderSyncChips() {
+  const c = $('syncChip'); if (!c) return;
+  const h = readHistory()[0];
+  if (!ghToken() || !h || !$('summary').classList.contains('active')) { c.innerHTML = ''; return; }
+  c.innerHTML = chipHtml(syncStatusOf(h));
+  const hv = $('historyView'); if (hv && hv.classList.contains('active')) readHistory().forEach((x, hi) => { const e = $('syncChip-' + hi); if (e) e.innerHTML = chipHtml(syncStatusOf(x)); });
+}
+// ----- Settings card -----
+const TOKEN_STEPS = ['On GitHub (signed in as Adalderson): Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.',
+  'Name it "Work Gym phone", pick an expiration, Resource owner: Adalderson.',
+  'Repository access: Only select repositories → Adalderson/workgym-data (nothing else).',
+  'Repository permissions: Issues → Read and write. Metadata → Read-only (added automatically). Leave everything else at No access.',
+  'Generate token, copy it, paste it here, tap Save, then Test.'];
+function syncCardHtml() {
+  const t = ghTokenTail();
+  return `<div class="prog-card" id="syncCard"><h4>GitHub sync</h4>
+    <div class="prog-sub" style="margin-bottom:6px">${t ? `Token saved on this phone: <b style="color:var(--text)">••••${esc(t)}</b>. Finished workouts post themselves to the private repo ${esc(WG_REPO)} as ${esc(activeProfileName())}, and plan requests send directly.` : `Optional. Add a token and each finished workout posts itself to the private repo ${esc(WG_REPO)} (no tapping Submit). Without one, nothing changes.`}</div>
+    ${t ? '' : `<label class="ik-field">Fine-grained token<input type="password" id="ghTok" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></label>
+    <ol class="tok-steps">${TOKEN_STEPS.map(x => `<li>${esc(x)}</li>`).join('')}</ol>`}
+    <div class="pick-row" style="margin-top:8px">${t ? '<button type="button" class="pick" id="ghTest">Test</button><button type="button" class="pick" id="ghSyncAll">Sync all unsynced history</button><button type="button" class="pick" id="ghRemove">Remove</button>' : '<button type="button" class="pick on" id="ghSave">Save</button>'}</div>
+    <div class="prog-sub" id="ghStatus" style="margin-top:6px"></div>
+    <div class="prog-sub" style="margin-top:6px">The token stays on this phone only (never in backups or exports) and only works on ${esc(WG_REPO)}. Reset this phone removes it.</div></div>`;
+}
+function bindSyncCard() {
+  const st = m => { if ($('ghStatus')) $('ghStatus').textContent = m; };
+  const rerender = () => { const b = $('sSync'); if (b) { b.innerHTML = syncCardHtml(); bindSyncCard(); } };
+  if ($('ghSave')) $('ghSave').onclick = () => {
+    const v = String(($('ghTok') && $('ghTok').value) || '').trim();
+    if (!/^(github_pat_|ghp_)[A-Za-z0-9_]{20,}$/.test(v)) { st('That doesn\'t look like a GitHub token (starts with github_pat_).'); return; }
+    localStorage.setItem(GH_TOKEN_KEY, v); rerender(); toast('Token saved'); st('Saved. Tap Test to check it.');
+  };
+  if ($('ghRemove')) $('ghRemove').onclick = () => { if (!confirm('Remove the GitHub token from this phone? Workouts will stop syncing (nothing already synced is affected).')) return; localStorage.removeItem(GH_TOKEN_KEY); rerender(); toast('Token removed'); };
+  if ($('ghTest')) $('ghTest').onclick = async () => {
+    st('Testing…');
+    const r = await ghTestRepo();
+    st(r.ok ? `✓ Connected to ${r.name}${r.private ? ' (private)' : ''}.` : '✗ ' + r.error);
+    return r;
+  };
+  if ($('ghSyncAll')) $('ghSyncAll').onclick = () => syncAllUnsynced().then(r => { st(r.posted || r.deduped ? `Synced ${r.posted + r.deduped}.` : r.failed ? 'Some failed; see History.' : r.queued ? 'Offline: queued.' : 'Everything is synced.'); });
+}
+// ----- hooks into the existing app (installed once, when the profile is entered) -----
+function v52Install() {
+  if (v52Installed) return; v52Installed = true;
+  const _finish = finishWorkout;
+  finishWorkout = function () {
+    const r = _finish.apply(this, arguments);
+    if (ghToken()) { const h = readHistory()[0]; if (h) { enqueueSession(h); renderSyncChips(); processSyncQueue('done'); } }
+    else if ($('syncChip')) $('syncChip').innerHTML = '';
+    return r;
+  };
+  const _sessionsHtml = sessionsHtml;
+  sessionsHtml = function (limit) {
+    let html = _sessionsHtml(limit);
+    if (!ghToken()) return html;
+    readHistory().forEach((h, hi) => {
+      const btn = `id="sendCoach-${hi}">Send to Coach</button>`;
+      html = html.replace(btn, btn + `<div class="sync-row" id="syncChip-${hi}">${chipHtml(syncStatusOf(h))}</div>`);
+    });
+    if (limit == null) html = `<button type="button" class="btn-secondary" id="histSyncAll" style="width:100%;margin:0 0 8px">⟳ Sync all unsynced history</button>` + html;
+    return html;
+  };
+  const _showHistory = showHistory;
+  showHistory = function () { const r = _showHistory.apply(this, arguments); if ($('histSyncAll')) $('histSyncAll').onclick = () => syncAllUnsynced().then(() => showHistory()); return r; };
+  if ($('btnHistory')) $('btnHistory').onclick = showHistory; // was bound to the unwrapped function at load
 }
 
 
@@ -3021,6 +3234,7 @@ function showSettings() {
     <div class="food-grid">${f('sPF', 'Protein floor g', s.proteinFloor)}${f('sPS', 'Protein stretch g', s.proteinStretch)}</div>
     <div class="food-grid">${f('sCMin', 'Carbs min g', s.carbMin)}${f('sCMax', 'Carbs max g', s.carbMax)}</div></div>
   <div id="sSchedule"></div>
+  <div id="sSync"></div>
   <div class="prog-card"><h4>Training</h4>
     <div class="food-grid">${f('sDW', 'Offer a deload after N weeks', s.deloadWeeks)}${f('sSmall', 'Small-DB step (lb)', s.smallStep, 0.5)}</div>
     <div class="q-label">Rest timer</div><div class="pick-row"><button id="sRestPlan" class="pick${s.restMode !== 'auto' ? ' on' : ''}">Use plan rests</button><button id="sRestAuto" class="pick${s.restMode === 'auto' ? ' on' : ''}">Auto by exercise</button></div>
@@ -3032,6 +3246,7 @@ function showSettings() {
   v.classList.add('active'); hideViewsExcept('settingsView');
   $('sResetPhone').onclick = () => resetThisPhone();
   $('sSchedule').innerHTML = scheduleCardHtml(); bindSchedule();
+  $('sSync').innerHTML = syncCardHtml(); bindSyncCard();
   let rest = s.restMode;
   $('sRestPlan').onclick = () => { rest = 'plan'; $('sRestPlan').classList.add('on'); $('sRestAuto').classList.remove('on'); };
   $('sRestAuto').onclick = () => { rest = 'auto'; $('sRestAuto').classList.add('on'); $('sRestPlan').classList.remove('on'); };
