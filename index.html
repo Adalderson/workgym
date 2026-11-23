@@ -266,6 +266,11 @@
   .req-note { margin-top:10px; background:#2a2615; border-left:4px solid #ffd166; border-radius:10px; padding:8px 10px; font-size:0.82rem; color:#ffe6a6; text-align:left; }
   .intake-view,.request-view { display:none; position:fixed; inset:0; z-index:150; background:#05080c; overflow-y:auto; padding:16px 14px 40px; }
   .intake-view.active,.request-view.active { display:block; }
+  .hint-row { flex-direction:column; }
+  .hint-row .pick { width:100%; min-width:0; text-align:left; padding:8px 12px; display:flex; flex-direction:column; justify-content:center; gap:2px; }
+  .pick-label { display:block; }
+  .pick-hint { display:block; font-size:0.74rem; font-weight:500; color:var(--muted); line-height:1.25; }
+  .pick.on .pick-hint { color:#bfe9dc; }
   .sync-chip { display:inline-block; margin-top:8px; padding:4px 10px; border-radius:999px; font-size:0.78rem; font-weight:700; }
   .sync-chip.ok { background:#163a32; color:var(--accent); } .sync-chip.q { background:#2a2615; color:#ffd166; } .sync-chip.bad { background:#3a1e1e; color:#ff8a8a; } .sync-chip.none { background:#22303f; color:var(--muted); }
   #syncChip { text-align:center; min-height:0; }
@@ -430,7 +435,7 @@
   <div id="checkinBox"></div>
 </div>
 
-<footer>Gym or Home • Form cues included • Definition cut • State persists • v5.2 (github sync • private requests • one profile per phone • plan requests • intake • send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
+<footer>Gym or Home • Form cues included • Definition cut • State persists • v5.3 (goal hints • github sync • private requests • one profile per phone • plan requests • intake • send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
 
 <script>
 // ======================= v5: one profile per phone =======================
@@ -442,7 +447,7 @@
 const WG5 = { REG: 'wg5Profiles', DEVICE: 'wg5Device', MIG: 'wg5Migrated', PREFIX: 'wg5:' };
 // v5.1: plan requests (and any workout logs) go to the PRIVATE data repo; the app itself stays on the public workgym Pages site.
 const WG_REPO = 'Adalderson/workgym-data', WG_ASSIGNEE = 'Adalderson', WG_SITE = 'https://adalderson.github.io/workgym/';
-const WG_VERSION = 'v5.2';
+const WG_VERSION = 'v5.3';
 const LEGACY_KEYS = ['workGymHistory', 'workGymMode', 'workGymPlan', 'workGymState', 'workGymBodyweight', 'workGymLastBackup', 'workGymNutrition', 'workGymSettings'];
 const INTAKE_KEY = 'workGymIntake';
 const REQ_NOTE = 'Plan requests are checked daily at 8 PM Eastern (ET), and usually picked up right away.';
@@ -602,7 +607,10 @@ function renderStarter() {
 }
 
 // ---------- intake card ----------
-const GOAL_LABEL = { fatloss: 'Fat loss', muscle: 'Muscle gain', recomp: 'Recomp', strength: 'Strength', general: 'General fitness', other: 'Other' };
+// v5.3: clearer goal names + one-line hints. Stored values (fatloss, muscle, recomp, ...) are unchanged.
+const GOAL_HINT = { fatloss: 'Lose weight, keep muscle', muscle: 'Add size, some fat gain OK', recomp: 'Stay near current weight, change shape', strength: 'Lift heavier', general: 'Feel and move better' };
+const GOAL_BODY_LABEL = { recomp: 'Lose fat + build muscle (recomp)' };
+const GOAL_LABEL = { fatloss: 'Fat loss', muscle: 'Muscle gain', recomp: 'Lose fat + build muscle', strength: 'Strength', general: 'General fitness', other: 'Other' };
 const EXP_LABEL = { new: 'New (under 6 months)', beginner: 'Beginner (6-12 months)', intermediate: 'Intermediate (1-3 years)', advanced: 'Advanced (3+ years)' };
 const WHERE_LABEL = { gym: 'Commercial gym', home: 'Home with equipment', bodyweight: 'Bodyweight only', mixed: 'Mixed' };
 const EQUIP_LABEL = { dumbbells: 'Dumbbells', barbell: 'Barbell', machines: 'Machines', cables: 'Cables', bands: 'Bands', pullup: 'Pull-up bar', bench: 'Bench', kettlebells: 'Kettlebells' };
@@ -624,9 +632,9 @@ function openIntake(o) {
   renderIntake();
 }
 function iv(id) { const e = $(id); return e ? String(e.value == null ? '' : e.value).trim() : ''; }
-function pickHtml(field, map, multi) {
+function pickHtml(field, map, multi, hints) {
   const cur = intakeDraft[field];
-  return `<div class="pick-row">${Object.keys(map).map(k => `<button type="button" class="pick${multi ? (cur.indexOf(k) >= 0 ? ' on' : '') : (cur === k ? ' on' : '')}" id="ik-${field}-${k}">${esc(map[k])}</button>`).join('')}</div>`;
+  return `<div class="pick-row${hints ? ' hint-row' : ''}">${Object.keys(map).map(k => `<button type="button" class="pick${multi ? (cur.indexOf(k) >= 0 ? ' on' : '') : (cur === k ? ' on' : '')}" id="ik-${field}-${k}"><span class="pick-label">${esc(map[k])}</span>${hints && hints[k] ? `<span class="pick-hint">${esc(hints[k])}</span>` : ''}</button>`).join('')}</div>`;
 }
 function bindPicks(field, map, multi) {
   Object.keys(map).forEach(k => {
@@ -680,7 +688,7 @@ function renderIntake() {
     (d.heightUnit === 'cm' ? txt('ikHCm', 'Height (cm)', d.heightCm, 'cm', 'number') : `<div class="food-grid">${txt('ikHFt', 'Feet', d.heightFt, 'ft', 'number')}${txt('ikHIn', 'Inches', d.heightIn, 'in', 'number')}</div>`) +
     `<div class="food-grid">${txt('ikWeight', 'Current weight', d.weight, d.weightUnit, 'number')}</div>` +
     `<div class="pick-row"><button type="button" class="pick${d.weightUnit === 'lb' ? ' on' : ''}" id="ikWU-lb">lb</button><button type="button" class="pick${d.weightUnit === 'kg' ? ' on' : ''}" id="ikWU-kg">kg</button></div>`;
-  if (s === 1) body = `<div class="q-label">Main goal</div>${pickHtml('goal', GOAL_LABEL)}` +
+  if (s === 1) body = `<div class="q-label">Main goal</div>${pickHtml('goal', GOAL_LABEL, false, GOAL_HINT)}` +
     (d.goal === 'other' ? txt('ikGoalOther', 'Describe the goal', d.goalOther, 'e.g. run a 10K, hike, sport', 'text') : '') +
     txt('ikTarget', `Target weight (${d.weightUnit}, optional)`, d.targetWeight, 'optional', 'number') +
     `<div class="q-label">Training experience</div>${pickHtml('experience', EXP_LABEL)}`;
@@ -758,7 +766,7 @@ function intakeReadable(d) {
   const add = (k, v) => { if (v != null && String(v).trim() !== '') L.push(k + ': ' + v); };
   add('Name', d.name); add('Sex', SEX_LABEL[d.sex] || d.sex); add('Age', d.age); add('Height', intakeHeight(d));
   add('Current weight', d.weight !== '' && d.weight != null ? d.weight + ' ' + u : '');
-  add('Goal', (GOAL_LABEL[d.goal] || d.goal || '') + (d.goal === 'other' && d.goalOther ? ' (' + d.goalOther + ')' : ''));
+  add('Goal', (GOAL_BODY_LABEL[d.goal] || GOAL_LABEL[d.goal] || d.goal || '') + (d.goal === 'other' && d.goalOther ? ' (' + d.goalOther + ')' : ''));
   add('Target weight', d.targetWeight !== '' && d.targetWeight != null ? d.targetWeight + ' ' + u : '');
   add('Experience', EXP_LABEL[d.experience] || d.experience);
   add('Days per week', d.daysPerWeek); add('Preferred days', (d.preferredDays || []).join(', ')); add('Session length', d.sessionLength ? d.sessionLength + ' min' : '');

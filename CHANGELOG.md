@@ -1,5 +1,11 @@
 # Work Gym changelog
 
+## v5.3 (2026-11-23): clearer goal names
+
+- In the intake Goals step, "Recomp" is now **"Lose fat + build muscle"**. The stored value is still `recomp`, so existing intakes and plan requests stay compatible. Plan requests now say "Goal: Lose fat + build muscle (recomp)".
+- Each goal button now has a one-line hint: Fat loss "Lose weight, keep muscle", Muscle gain "Add size, some fat gain OK", Lose fat + build muscle "Stay near current weight, change shape", Strength "Lift heavier", General fitness "Feel and move better". The buttons stack full-width so they fit a phone screen.
+- Footer v5.3, SW cache `workgym-v5.3`. v5.2 is kept as downloads/workout-app-v5.2.html.
+
 ## v5.2 (2026-11-23): optional GitHub sync (silent auto-push)
 
 - New **Settings > GitHub sync** card. Paste a fine-grained token limited to **Adalderson/workgym-data** (Issues: Read and write, Metadata: Read-only). The token is stored on that phone only (device-level, never in backups or exports, never in the repo), shown as ••••last4, with **Test** (reads the repo), **Sync all unsynced history** and **Remove**. Reset this phone also removes it.
