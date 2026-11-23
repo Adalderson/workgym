@@ -12,6 +12,20 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#00d4aa">
 <title>Work Gym</title>
+<meta name="description" content="Your workout plan, logging, and coach check-ins in one tap. Set up your own profile on your phone.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Work Gym">
+<meta property="og:title" content="Work Gym">
+<meta property="og:description" content="Your workout plan, logging, and coach check-ins in one tap. Open on your phone to set up your profile.">
+<meta property="og:url" content="https://adalderson.github.io/workgym/">
+<meta property="og:image" content="https://adalderson.github.io/workgym/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="Work Gym app icon">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Work Gym">
+<meta name="twitter:description" content="Your workout plan, logging, and coach check-ins in one tap.">
+<meta name="twitter:image" content="https://adalderson.github.io/workgym/icon-512.png">
 <style>
   :root { --bg:#0f1419; --card:#1a2332; --accent:#00d4aa; --accent2:#0099ff; --text:#e8eef4; --muted:#8b9bb4; }
   * { box-sizing:border-box; margin:0; padding:0; }
@@ -242,12 +256,49 @@
   .coach-share-card { background:var(--card); border-radius:14px; padding:16px 14px; }
   .coach-share-card h3 { margin:0 0 8px; }
   .coach-share-card input[type="number"] { width:100%; min-height:56px; margin:10px 0; padding:10px; border:none; border-radius:10px; background:#2a3545; color:var(--text); font-size:1.2rem; text-align:center; }
+
+  /* ---------- v5 profiles ---------- */
+  .profile-tag { display:inline-block; margin-top:4px; padding:2px 10px; border-radius:999px; background:#22303f; color:var(--muted); font-size:0.72rem; font-weight:700; letter-spacing:0.3px; user-select:none; }
+  .profile-tag:empty { display:none; }
+  .profile-tag::before { content:'👤 '; }
+  .starter-card { display:none; } .starter-card.active { display:block; }
+  .starter h3 { margin:0 0 4px; }
+  .req-note { margin-top:10px; background:#2a2615; border-left:4px solid #ffd166; border-radius:10px; padding:8px 10px; font-size:0.82rem; color:#ffe6a6; text-align:left; }
+  .intake-view,.request-view { display:none; position:fixed; inset:0; z-index:150; background:#05080c; overflow-y:auto; padding:16px 14px 40px; }
+  .intake-view.active,.request-view.active { display:block; }
+  .req-public { margin-top:8px; background:#2a1d1d; border-left:4px solid #ff8a8a; border-radius:10px; padding:8px 10px; font-size:0.78rem; color:#ffc9c9; text-align:left; }
+  .ik-card { background:var(--card); border-radius:14px; padding:16px 14px; max-width:480px; margin:0 auto; }
+  .ik-card h3 { margin:0 0 8px; }
+  .ik-steps { font-size:0.72rem; color:var(--accent); font-weight:700; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:4px; }
+  .ik-field { display:flex; flex-direction:column; gap:4px; font-size:0.8rem; color:var(--muted); margin:10px 0 4px; flex:1; }
+  .ik-field input { min-height:52px; padding:10px; border:none; border-radius:10px; background:#2a3545; color:var(--text); font-size:1.05rem; width:100%; }
+  .ik-area { height:76px !important; font-family:inherit !important; font-size:0.95rem !important; background:#2a3545 !important; margin:0 !important; }
+  .ik-locked { min-height:44px; padding:10px; border-radius:10px; background:#141c27; color:var(--text); font-size:1.05rem; font-weight:700; }
+  .ik-nav { display:flex; gap:8px; margin-top:14px; align-items:stretch; }
+  .ik-nav .btn-secondary { margin-top:0; flex:0 0 32%; }
+  .ik-err { color:#ff8a8a; font-size:0.85rem; min-height:1.1em; margin-top:8px; }
+  .ik-review { background:#141c27; border-radius:10px; padding:10px; font-size:0.85rem; line-height:1.45; }
+  a.ik-link { display:flex; align-items:center; justify-content:center; text-decoration:none; width:100%; }
+  .danger-zone { margin-top:22px; color:var(--muted); font-size:0.8rem; }
+  .danger-zone summary { cursor:pointer; padding:8px 0; }
+  .reset-btn { width:100%; min-height:48px; margin-top:8px; border:1px solid #5a2a2a; border-radius:10px; background:transparent; color:#ff8a8a; font-weight:700; }
+  .wl-card { text-align:center; padding-top:28px; }
+  .wl-logo { font-size:3rem; margin-bottom:6px; }
+  .wl-btn { display:block; width:100%; margin-top:12px; }
+  .wl-alt { background:#2a3545; color:var(--text); }
+  .wl-list { display:flex; flex-direction:column; gap:8px; margin:6px 0 4px; }
+  .wl-name { min-height:60px; border:2px solid #2a3545; border-radius:12px; background:#141c27; color:var(--text); font-size:1.15rem; font-weight:800; text-align:left; padding:0 16px; cursor:pointer; }
+  .wl-file { display:flex; align-items:center; min-height:54px; padding:0 14px; border:2px dashed #2a3545; border-radius:12px; color:var(--text); font-weight:700; cursor:pointer; position:relative; overflow:hidden; }
+  .wl-file input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+  .wl-opt { width:100%; margin-top:10px; }
+  body.no-profile .tab-bar, body.no-profile #moreMenu, body.no-profile footer { visibility:hidden; }
 </style>
 </head>
-<body>
+<body class="no-profile">
 <header>
   <h1>Work Gym</h1>
-  <div class="subtitle">Definition Cut • 215 → 195-200</div>
+  <div class="subtitle" id="appSubtitle">Definition Cut • 215 → 195-200</div>
+  <div class="profile-tag" id="profileTag" aria-label="profile on this phone"></div>
 </header>
 <div id="backupBanner" class="backup-banner"></div>
 <nav class="tab-bar" id="tabBar">
@@ -270,6 +321,9 @@
   <button id="btnProgress">Progress</button>
   <button id="btnBackup" class="primary">Backup</button>
   <button id="btnSendToday" class="primary">Send today to Coach</button>
+  <button id="btnRequestPlan" class="primary">Request new plan</button>
+  <button id="btnIntake">My intake</button>
+  <button id="btnInvite">Share invite link</button>
   <button id="btnSettings">Settings</button>
 </div>
 <div id="backupStatus" class="backup-status"></div>
@@ -302,6 +356,7 @@
   <button class="btn-secondary" id="cancelImport">Cancel</button>
 </div>
 
+<div id="starterCard" class="starter-card"></div>
 <div class="day-selector" id="daySelector"></div>
 <div id="exerciseList" class="exercise-list"></div>
 
@@ -356,6 +411,9 @@
 <div id="readyView" class="ready-view"></div>
 <div id="editView" class="edit-view"></div>
 <div id="coachShareView" class="coach-share-view"></div>
+<div id="welcomeView" class="intake-view"></div>
+<div id="intakeView" class="intake-view"></div>
+<div id="requestView" class="request-view"></div>
 <div id="toast" class="toast"></div>
 
 <div id="summary" class="summary">
@@ -366,9 +424,616 @@
   <div id="checkinBox"></div>
 </div>
 
-<footer>Gym or Home • Form cues included • Definition cut • State persists • v4.2 (send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
+<footer>Gym or Home • Form cues included • Definition cut • State persists • v5 (one profile per phone • plan requests • intake • send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
 
 <script>
+// ======================= v5: one profile per phone =======================
+// The phone is bound to ONE profile on first launch. There is no picker and no in-app switcher:
+// every launch opens the bound profile, so data can't be cross-recorded.
+// All app data lives under per-profile keys: 'wg5:<profileId>:<old key>' (e.g. wg5:adam:workGymHistory).
+// v4.x data (un-namespaced workGym* keys) is copied into the 'Adam' profile once and the old keys are
+// left untouched as a fallback. Settings > Reset this phone (typed confirm) backs up first, then unbinds.
+const WG5 = { REG: 'wg5Profiles', DEVICE: 'wg5Device', MIG: 'wg5Migrated', PREFIX: 'wg5:' };
+const WG_REPO = 'Adalderson/workgym', WG_ASSIGNEE = 'Adalderson', WG_SITE = 'https://adalderson.github.io/workgym/';
+const LEGACY_KEYS = ['workGymHistory', 'workGymMode', 'workGymPlan', 'workGymState', 'workGymBodyweight', 'workGymLastBackup', 'workGymNutrition', 'workGymSettings'];
+const INTAKE_KEY = 'workGymIntake';
+const REQ_NOTE = 'Plan requests are checked daily at 8 PM Eastern (ET), and usually picked up right away.';
+const REQ_ACCESS_NOTE = 'Requests are auto-assigned to Adam so the coach is pinged right away. GitHub only keeps the assignment and labels when the account filing has write access to Adalderson/workgym, so file from Adam\'s GitHub account or have Adam add you as a collaborator. Otherwise it still arrives and is caught by the 8 PM ET check.';
+const URL_MAX = 7000;
+let activeProfile = null;   // the profile this phone is bound to (set once per launch)
+let nsPrefix = null;        // 'wg5:<id>:' once bound; null = nothing is read or written
+let wgStarted = false;
+// Profile-scoped storage used by the whole app (every old localStorage call goes through here).
+const PLS = {
+  getItem(k) { return nsPrefix == null ? null : localStorage.getItem(nsPrefix + k); },
+  setItem(k, v) { if (nsPrefix == null) return; localStorage.setItem(nsPrefix + k, v); },
+  removeItem(k) { if (nsPrefix != null) localStorage.removeItem(nsPrefix + k); }
+};
+function profileKeyPrefix(id) { return WG5.PREFIX + id + ':'; }
+function cleanProfileName(n) { return String(n == null ? '' : n).replace(/[^A-Za-z0-9 .\-_'À-ÿ]/g, '').replace(/\s+/g, ' ').trim().slice(0, 24); }
+function slugProfile(name) { return cleanProfileName(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'profile'; }
+function sameProfileName(a, b) { return !!a && !!b && slugProfile(a) === slugProfile(b); }
+function activeProfileName() { return activeProfile ? activeProfile.name : ''; }
+function profileHasBuiltins() { return !!(activeProfile && activeProfile.builtin); }
+function readJSONRaw(k, d) { try { const v = JSON.parse(localStorage.getItem(k) || 'null'); return v == null ? d : v; } catch (e) { return d; } }
+function readProfiles() { const a = readJSONRaw(WG5.REG, []); return Array.isArray(a) ? a.filter(p => p && p.id && p.name) : []; }
+function writeProfiles(a) { localStorage.setItem(WG5.REG, JSON.stringify(a)); }
+function upsertProfile(p) { const a = readProfiles().filter(x => x.id !== p.id); a.push(p); writeProfiles(a); return p; }
+function readDevice() { const d = readJSONRaw(WG5.DEVICE, null); return d && d.profileId ? d : null; }
+function profileDataCount(id) { try { const h = JSON.parse(localStorage.getItem(profileKeyPrefix(id) + 'workGymHistory') || '[]'); return Array.isArray(h) ? h.length : 0; } catch (e) { return 0; } }
+function legacyKeyList() {
+  const ks = new Set(LEGACY_KEYS);
+  try { if (typeof localStorage.length === 'number' && localStorage.key) for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && /^workGym/.test(k)) ks.add(k); } } catch (e) {}
+  return Array.from(ks);
+}
+function hasLegacyData() { return legacyKeyList().some(k => localStorage.getItem(k) != null); }
+// Copies v4.x keys into wg5:adam:* once. Never overwrites an existing namespaced value, never deletes old keys.
+function migrateV5() {
+  if (localStorage.getItem(WG5.MIG)) return { migrated: false, already: true };
+  if (!hasLegacyData()) return { migrated: false, nothing: true };
+  const pre = profileKeyPrefix('adam'), copied = [], skipped = [];
+  try {
+    legacyKeyList().forEach(k => {
+      const v = localStorage.getItem(k);
+      if (v == null) return;
+      if (localStorage.getItem(pre + k) == null) { localStorage.setItem(pre + k, v); copied.push(k); } else skipped.push(k);
+    });
+  } catch (e) {
+    alert('Work Gym could not finish moving your data into the Adam profile (storage full?). Your old data is untouched. Free some space and reopen the app.');
+    return { migrated: false, error: String(e) };
+  }
+  const p = readProfiles().find(x => x.id === 'adam') || { id: 'adam', name: 'Adam', created: new Date().toISOString() };
+  p.builtin = true;
+  upsertProfile(p);
+  localStorage.setItem(WG5.MIG, JSON.stringify({ at: new Date().toISOString(), to: 'adam', copied, skipped, note: 'Old un-namespaced workGym* keys were left untouched as a fallback.' }));
+  if (!readDevice()) bindDevice(p);
+  return { migrated: true, copied, skipped };
+}
+function bindDevice(p) { localStorage.setItem(WG5.DEVICE, JSON.stringify({ profileId: p.id, name: p.name, boundAt: new Date().toISOString() })); }
+function readIntake() { try { const v = JSON.parse(PLS.getItem(INTAKE_KEY) || 'null'); return v && typeof v === 'object' ? v : null; } catch (e) { return null; } }
+function saveIntakeData(obj) { PLS.setItem(INTAKE_KEY, JSON.stringify(obj)); }
+function urlParam(name) { try { return typeof location !== 'undefined' && location.search ? new URLSearchParams(location.search).get(name) : null; } catch (e) { return null; } }
+function clearUrlParams(names) {
+  try {
+    if (typeof window === 'undefined' || !window.history || !window.history.replaceState) return;
+    const u = new URL(location.href); names.forEach(n => u.searchParams.delete(n));
+    window.history.replaceState(null, '', u.pathname + (u.searchParams.toString() ? '?' + u.searchParams.toString() : '') + u.hash);
+  } catch (e) {}
+}
+
+// ---------- boot ----------
+function wgBoot() {
+  migrateV5();
+  const dev = readDevice();
+  const invite = urlParam('invite');
+  if (dev) {
+    const p = readProfiles().find(x => x.id === dev.profileId) || { id: dev.profileId, name: dev.name || dev.profileId };
+    if (invite) { clearUrlParams(['invite', 'name']); setTimeout(() => toast(`This phone is already set up for ${p.name}. The invite link is for a new phone.`), 400); }
+    wgEnterProfile(p);
+    return 'bound';
+  }
+  // Fresh phone (or after Reset this phone). The invite link goes straight to setup; otherwise ask first.
+  if (invite) {
+    openIntake({ mode: 'new', name: cleanProfileName(urlParam('name') || '') });
+    clearUrlParams(['invite', 'name']);
+    return 'intake';
+  }
+  showWelcome();
+  return 'welcome';
+}
+function wgEnterProfile(p) {
+  if (wgStarted) return false; // locked for the life of this page: no switching
+  activeProfile = Object.assign({}, p, { builtin: !!p.builtin || p.id === 'adam' });
+  nsPrefix = profileKeyPrefix(activeProfile.id);
+  wgStarted = true;
+  document.body && document.body.classList && document.body.classList.remove('no-profile');
+  applyProfileChrome();
+  loadPlan();
+  v3Init();
+  v4Init();
+  v42Init();
+  v5Init();
+  return true;
+}
+function applyProfileChrome() {
+  const name = activeProfileName();
+  if ($('profileTag')) $('profileTag').textContent = name;
+  try { document.title = 'Work Gym · ' + name; } catch (e) {}
+  const sub = $('appSubtitle');
+  if (sub && !profileHasBuiltins()) {
+    const it = readIntake() || {};
+    const g = it.goal ? (GOAL_LABEL[it.goal] || it.goal) : 'Your plan';
+    sub.textContent = g + (it.weight ? ` • ${it.weight}${it.weightUnit === 'kg' ? ' kg' : ' lb'}${it.targetWeight ? ' → ' + it.targetWeight : ''}` : '');
+  }
+  ['btnModeGym', 'btnModeHome', 'btnGenerate'].forEach(id => { const b = $(id); if (b) b.style.display = profileHasBuiltins() ? '' : 'none'; });
+}
+function v5Init() {
+  renderStarter();
+  if ($('btnRequestPlan')) $('btnRequestPlan').onclick = () => openRequest({});
+  if ($('btnIntake')) $('btnIntake').onclick = () => openIntake({ mode: 'edit' });
+  if ($('btnInvite')) $('btnInvite').onclick = shareInvite;
+}
+
+// ---------- settings defaults per profile ----------
+// Adam keeps his care-team macros. Other profiles start with NO macro targets (nothing of Adam's bleeds over);
+// goal weights come from their intake.
+function profileSettingDefaults() {
+  if (profileHasBuiltins()) return {};
+  const it = readIntake() || {};
+  const toLb = v => { const n = parseFloat(v); if (!isFinite(n) || n <= 0) return null; return it.weightUnit === 'kg' ? Math.round(n * 2.20462) : n; };
+  const g = toLb(it.targetWeight) || toLb(it.weight) || 150;
+  return { proteinFloor: null, proteinStretch: null, carbMin: null, carbMax: null, goal1: g, goal2: g };
+}
+function macrosOn(s) { return s && s.proteinFloor != null && s.proteinFloor !== '' && s.carbMax != null && s.carbMax !== ''; }
+
+// ---------- plans: profile field ----------
+function planProfileMismatch(data) {
+  if (!data || data.profile == null || String(data.profile).trim() === '') return null;
+  const want = cleanProfileName(data.profile) || String(data.profile);
+  if (sameProfileName(want, activeProfileName())) return null;
+  return `This plan is for ${want}; this phone is set up for ${activeProfileName()}. Open the link on ${want}'s phone. Nothing was changed.`;
+}
+
+// ---------- starter card (no plan yet) ----------
+function renderStarter() {
+  const c = $('starterCard'); if (!c) return;
+  const show = !!activeProfile && !currentPlan;
+  c.classList.toggle('active', show);
+  if (!show) { c.innerHTML = ''; return; }
+  const name = esc(activeProfileName());
+  c.innerHTML = `<div class="prog-card starter"><h3>Welcome, ${name}</h3>
+    <div class="prog-sub" style="margin:4px 0 10px">No plan yet. Send your coach your intake and goals and you'll get a starting routine built for you.</div>
+    <button class="big btn-done" id="btnStarterRequest" style="width:100%">Request my starting plan</button>
+    <div class="req-note">🕗 ${esc(REQ_NOTE)}</div>
+    <div class="prog-sub" style="margin-top:8px">When it's ready, open the plan link your coach posts on your request, or paste it under More → Import.</div>
+    <button class="btn-secondary" id="btnStarterIntake" style="width:100%">Review my intake</button></div>`;
+  $('btnStarterRequest').onclick = () => openRequest({ starting: true });
+  $('btnStarterIntake').onclick = () => openIntake({ mode: 'edit' });
+}
+
+// ---------- intake card ----------
+const GOAL_LABEL = { fatloss: 'Fat loss', muscle: 'Muscle gain', recomp: 'Recomp', strength: 'Strength', general: 'General fitness', other: 'Other' };
+const EXP_LABEL = { new: 'New (under 6 months)', beginner: 'Beginner (6-12 months)', intermediate: 'Intermediate (1-3 years)', advanced: 'Advanced (3+ years)' };
+const WHERE_LABEL = { gym: 'Commercial gym', home: 'Home with equipment', bodyweight: 'Bodyweight only', mixed: 'Mixed' };
+const EQUIP_LABEL = { dumbbells: 'Dumbbells', barbell: 'Barbell', machines: 'Machines', cables: 'Cables', bands: 'Bands', pullup: 'Pull-up bar', bench: 'Bench', kettlebells: 'Kettlebells' };
+const DAYS7 = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const SEX_LABEL = { female: 'Female', male: 'Male', other: 'Other', na: 'Prefer not to say' };
+const INTAKE_STEPS = ['About you', 'Goals', 'Schedule', 'Where you train', 'Injuries & preferences', 'Lifestyle', 'Review'];
+let intakeDraft = null, intakeStep = 0, intakeMode = 'new';
+function intakeEmpty() {
+  return { name: '', sex: '', age: '', heightUnit: 'ftin', heightFt: '', heightIn: '', heightCm: '', weight: '', weightUnit: 'lb', goal: '', goalOther: '', targetWeight: '',
+    experience: '', daysPerWeek: '', preferredDays: [], sessionLength: '', where: '', equipment: [], dbMax: '', otherEquipment: '',
+    injuries: '', avoid: '', preferred: '', disliked: '', cardio: '', steps: '', sleep: '', diet: '', other: '' };
+}
+function openIntake(o) {
+  intakeMode = o.mode || 'new';
+  intakeDraft = Object.assign(intakeEmpty(), intakeMode === 'edit' ? (readIntake() || {}) : {});
+  if (intakeMode === 'edit') intakeDraft.name = activeProfileName();
+  if (o.name) intakeDraft.name = cleanProfileName(o.name);
+  intakeStep = 0;
+  renderIntake();
+}
+function iv(id) { const e = $(id); return e ? String(e.value == null ? '' : e.value).trim() : ''; }
+function pickHtml(field, map, multi) {
+  const cur = intakeDraft[field];
+  return `<div class="pick-row">${Object.keys(map).map(k => `<button type="button" class="pick${multi ? (cur.indexOf(k) >= 0 ? ' on' : '') : (cur === k ? ' on' : '')}" id="ik-${field}-${k}">${esc(map[k])}</button>`).join('')}</div>`;
+}
+function bindPicks(field, map, multi) {
+  Object.keys(map).forEach(k => {
+    const b = $('ik-' + field + '-' + k); if (!b) return;
+    b.onclick = () => {
+      collectIntakeStep();
+      if (multi) { const a = intakeDraft[field].slice(); const i = a.indexOf(k); if (i >= 0) a.splice(i, 1); else a.push(k); intakeDraft[field] = a; }
+      else intakeDraft[field] = intakeDraft[field] === k ? '' : k;
+      renderIntake();
+    };
+  });
+}
+function txt(id, label, val, ph, type, extra) {
+  return `<label class="ik-field">${label}<input id="${id}" type="${type || 'text'}" ${type === 'number' ? 'inputmode="decimal"' : ''} value="${esc(val)}" placeholder="${esc(ph || '')}" ${extra || ''}></label>`;
+}
+function area(id, label, val, ph) { return `<label class="ik-field">${label}<textarea id="${id}" class="ik-area" placeholder="${esc(ph || '')}">${esc(val)}</textarea></label>`; }
+function collectIntakeStep() {
+  const d = intakeDraft; if (!d) return;
+  const map = {
+    0: () => { if (intakeMode !== 'edit' && $('ikName')) d.name = cleanProfileName(iv('ikName')); d.age = iv('ikAge'); d.heightFt = iv('ikHFt'); d.heightIn = iv('ikHIn'); d.heightCm = iv('ikHCm'); d.weight = iv('ikWeight'); },
+    1: () => { d.targetWeight = iv('ikTarget'); d.goalOther = iv('ikGoalOther'); },
+    2: () => {},
+    3: () => { d.dbMax = iv('ikDbMax'); d.otherEquipment = iv('ikOtherEq'); },
+    4: () => { d.injuries = iv('ikInj'); d.avoid = iv('ikAvoid'); d.preferred = iv('ikPref'); d.disliked = iv('ikDislike'); },
+    5: () => { d.cardio = iv('ikCardio'); d.steps = iv('ikSteps'); d.sleep = iv('ikSleep'); d.diet = iv('ikDiet'); d.other = iv('ikOther'); }
+  };
+  if (map[intakeStep]) map[intakeStep]();
+}
+function intakeStepError(step) {
+  const d = intakeDraft;
+  if (step === 0) {
+    if (!d.name) return 'Enter a name for this profile.';
+    if (!/^[A-Za-zÀ-ÿ]/.test(d.name)) return 'The name should start with a letter.';
+    const a = parseFloat(d.age); if (!(a >= 13 && a <= 100)) return 'Enter an age between 13 and 100.';
+    const w = parseFloat(d.weight); if (!(w >= 30 && w <= 700)) return 'Enter your current weight.';
+  }
+  if (step === 1) { if (!d.goal) return 'Pick a goal.'; if (!d.experience) return 'Pick your experience level.'; }
+  if (step === 2) { if (!d.daysPerWeek) return 'Pick how many days a week you can train.'; if (!d.sessionLength) return 'Pick a session length.'; }
+  if (step === 3) { if (!d.where) return 'Pick where you train.'; }
+  return null;
+}
+function renderIntake() {
+  const v = $('intakeView'); if (!v) return;
+  const d = intakeDraft, s = intakeStep, last = INTAKE_STEPS.length - 1;
+  let body = '';
+  if (s === 0) body =
+    (intakeMode === 'edit' ? `<div class="ik-field">Name<div class="ik-locked">${esc(d.name)} <span class="prog-sub">(this phone's profile)</span></div></div>` : txt('ikName', 'Name (this phone\'s profile)', d.name, 'e.g. Julie', 'text', 'maxlength="24" autocomplete="off"')) +
+    `<div class="q-label">Sex (optional)</div>${pickHtml('sex', SEX_LABEL)}` +
+    txt('ikAge', 'Age', d.age, 'years', 'number') +
+    `<div class="q-label">Height</div><div class="pick-row"><button type="button" class="pick${d.heightUnit === 'ftin' ? ' on' : ''}" id="ikHU-ftin">ft / in</button><button type="button" class="pick${d.heightUnit === 'cm' ? ' on' : ''}" id="ikHU-cm">cm</button></div>` +
+    (d.heightUnit === 'cm' ? txt('ikHCm', 'Height (cm)', d.heightCm, 'cm', 'number') : `<div class="food-grid">${txt('ikHFt', 'Feet', d.heightFt, 'ft', 'number')}${txt('ikHIn', 'Inches', d.heightIn, 'in', 'number')}</div>`) +
+    `<div class="food-grid">${txt('ikWeight', 'Current weight', d.weight, d.weightUnit, 'number')}</div>` +
+    `<div class="pick-row"><button type="button" class="pick${d.weightUnit === 'lb' ? ' on' : ''}" id="ikWU-lb">lb</button><button type="button" class="pick${d.weightUnit === 'kg' ? ' on' : ''}" id="ikWU-kg">kg</button></div>`;
+  if (s === 1) body = `<div class="q-label">Main goal</div>${pickHtml('goal', GOAL_LABEL)}` +
+    (d.goal === 'other' ? txt('ikGoalOther', 'Describe the goal', d.goalOther, 'e.g. run a 10K, hike, sport', 'text') : '') +
+    txt('ikTarget', `Target weight (${d.weightUnit}, optional)`, d.targetWeight, 'optional', 'number') +
+    `<div class="q-label">Training experience</div>${pickHtml('experience', EXP_LABEL)}`;
+  if (s === 2) body = `<div class="q-label">Days per week</div>${pickHtml('daysPerWeek', { 2: '2', 3: '3', 4: '4', 5: '5', 6: '6' })}` +
+    `<div class="q-label">Preferred days (optional)</div>${pickHtml('preferredDays', DAYS7.reduce((o, k) => (o[k] = k, o), {}), true)}` +
+    `<div class="q-label">Session length</div>${pickHtml('sessionLength', { 30: '30 min', 45: '45 min', 60: '60 min', 75: '75 min', 90: '90 min' })}`;
+  if (s === 3) body = `<div class="q-label">Where you train</div>${pickHtml('where', WHERE_LABEL)}` +
+    `<div class="q-label">Equipment you can use</div>${pickHtml('equipment', EQUIP_LABEL, true)}` +
+    (d.equipment.indexOf('dumbbells') >= 0 ? txt('ikDbMax', `Heaviest dumbbell (${d.weightUnit}, per hand)`, d.dbMax, 'e.g. 50', 'number') : '') +
+    txt('ikOtherEq', 'Other equipment (optional)', d.otherEquipment, 'e.g. treadmill, rower, TRX', 'text');
+  if (s === 4) body = area('ikInj', 'Injuries or limitations', d.injuries, 'e.g. old knee injury, low back gets tight') +
+    area('ikAvoid', 'Exercises to avoid', d.avoid, 'e.g. lunges, overhead press') +
+    area('ikPref', 'Exercises you like', d.preferred, 'e.g. hip thrusts, rows') +
+    area('ikDislike', 'Exercises you dislike', d.disliked, 'e.g. burpees');
+  if (s === 5) body = area('ikCardio', 'Cardio habits', d.cardio, 'e.g. walk 30 min most days, spin class Sat') +
+    txt('ikSteps', 'Typical daily steps (optional)', d.steps, 'e.g. 7000', 'number') +
+    area('ikSleep', 'Sleep and schedule', d.sleep, 'e.g. 6-7 h, night shifts Wed-Fri') +
+    area('ikDiet', 'Diet notes and restrictions (optional)', d.diet, 'e.g. vegetarian, lactose intolerant') +
+    `<div class="prog-sub" style="margin:-4px 0 8px">Diet notes are for coaching context only, not medical advice. Anything medical goes to your doctor.</div>` +
+    area('ikOther', 'Anything else your coach should know', d.other, 'optional');
+  if (s === 6) body = `<div class="ik-review">${esc(intakeReadable(d)).replace(/\n/g, '<br>')}</div>` +
+    (intakeMode === 'new' ? `<div class="prog-sub" style="margin-top:8px">Saving sets up this phone for <b style="color:var(--text)">${esc(d.name)}</b>. It will always open as ${esc(d.name)}; there's no profile switching.</div>` : '');
+  v.innerHTML = `<div class="ik-card"><div class="ik-steps">Step ${s + 1} of ${INTAKE_STEPS.length}</div><h3>${intakeMode === 'new' ? (s === 0 ? 'Set up this phone' : 'New profile') : 'My intake'}: ${esc(INTAKE_STEPS[s])}</h3>
+    ${s === 0 && intakeMode === 'new' ? '<div class="prog-sub" style="margin-bottom:8px">A few questions so your coach can build your starting routine. Takes about 3 minutes.</div>' : ''}
+    ${body}
+    <div class="ik-err" id="ikErr"></div>
+    <div class="ik-nav">${s > 0 ? '<button type="button" class="btn-secondary" id="ikBack">Back</button>' : (intakeMode === 'edit' ? '<button type="button" class="btn-secondary" id="ikCancel">Cancel</button>' : '<button type="button" class="btn-secondary" id="ikWelcome">Back</button>')}
+    <button type="button" class="big btn-done" id="ikNext">${s === last ? (intakeMode === 'new' ? 'Save & start' : 'Save intake') : 'Next'}</button></div></div>`;
+  v.classList.add('active');
+  ['sex', 'goal', 'experience', 'daysPerWeek', 'sessionLength', 'where'].forEach(f => bindPicks(f, { sex: SEX_LABEL, goal: GOAL_LABEL, experience: EXP_LABEL, daysPerWeek: { 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 }, sessionLength: { 30: 1, 45: 1, 60: 1, 75: 1, 90: 1 }, where: WHERE_LABEL }[f]));
+  bindPicks('preferredDays', DAYS7.reduce((o, k) => (o[k] = k, o), {}), true);
+  bindPicks('equipment', EQUIP_LABEL, true);
+  const unit = (id, f, val) => { const b = $(id); if (b) b.onclick = () => { collectIntakeStep(); intakeDraft[f] = val; renderIntake(); }; };
+  unit('ikHU-ftin', 'heightUnit', 'ftin'); unit('ikHU-cm', 'heightUnit', 'cm'); unit('ikWU-lb', 'weightUnit', 'lb'); unit('ikWU-kg', 'weightUnit', 'kg');
+  if ($('ikBack')) $('ikBack').onclick = () => { collectIntakeStep(); intakeStep--; renderIntake(); };
+  if ($('ikCancel')) $('ikCancel').onclick = closeIntake;
+  if ($('ikWelcome')) $('ikWelcome').onclick = () => { closeIntake(); showWelcome(); };
+  $('ikNext').onclick = () => {
+    collectIntakeStep();
+    const err = intakeStepError(intakeStep);
+    if (err) { $('ikErr').textContent = err; return; }
+    if (intakeStep < last) { intakeStep++; renderIntake(); try { v.scrollTop = 0; } catch (e) {} return; }
+    saveIntake();
+  };
+}
+function closeIntake() { const v = $('intakeView'); if (v) { v.classList.remove('active'); v.innerHTML = ''; } }
+function intakeRecord(d) {
+  const r = Object.assign({}, d, { v: 5, savedAt: new Date().toISOString() });
+  ['age', 'weight', 'targetWeight', 'heightFt', 'heightIn', 'heightCm', 'dbMax', 'steps'].forEach(k => { if (r[k] !== '' && isFinite(+r[k])) r[k] = +r[k]; });
+  r.daysPerWeek = r.daysPerWeek ? +r.daysPerWeek : ''; r.sessionLength = r.sessionLength ? +r.sessionLength : '';
+  return r;
+}
+function saveIntake() {
+  const rec = intakeRecord(intakeDraft);
+  if (intakeMode === 'edit') { saveIntakeData(rec); closeIntake(); applyProfileChrome(); renderStarter(); toast('Intake saved'); return true; }
+  // New: create the profile and bind this phone to it.
+  const id = slugProfile(rec.name);
+  const existing = readProfiles().find(p => p.id === id);
+  const n = profileDataCount(id);
+  if ((existing || n) && !confirm(`This phone already has saved Work Gym data for "${existing ? existing.name : rec.name}" (${n} workout${n === 1 ? '' : 's'}). Continue as ${rec.name} with that data?`)) {
+    $('ikErr').textContent = 'Pick a different name.'; intakeStep = 0; renderIntake(); return false;
+  }
+  const p = upsertProfile(Object.assign({}, existing || {}, { id, name: rec.name, created: (existing && existing.created) || new Date().toISOString(), builtin: id === 'adam' && !!(existing && existing.builtin) }));
+  bindDevice(p);
+  localStorage.setItem(profileKeyPrefix(id) + INTAKE_KEY, JSON.stringify(rec));
+  closeIntake();
+  wgEnterProfile(p);
+  toast(`This phone is set up for ${p.name}`);
+  return true;
+}
+function intakeHeight(d) { return d.heightUnit === 'cm' ? (d.heightCm ? d.heightCm + ' cm' : '') : (d.heightFt ? d.heightFt + ' ft ' + (d.heightIn || 0) + ' in' : ''); }
+function intakeReadable(d) {
+  d = d || {}; const u = d.weightUnit || 'lb';
+  const L = [];
+  const add = (k, v) => { if (v != null && String(v).trim() !== '') L.push(k + ': ' + v); };
+  add('Name', d.name); add('Sex', SEX_LABEL[d.sex] || d.sex); add('Age', d.age); add('Height', intakeHeight(d));
+  add('Current weight', d.weight !== '' && d.weight != null ? d.weight + ' ' + u : '');
+  add('Goal', (GOAL_LABEL[d.goal] || d.goal || '') + (d.goal === 'other' && d.goalOther ? ' (' + d.goalOther + ')' : ''));
+  add('Target weight', d.targetWeight !== '' && d.targetWeight != null ? d.targetWeight + ' ' + u : '');
+  add('Experience', EXP_LABEL[d.experience] || d.experience);
+  add('Days per week', d.daysPerWeek); add('Preferred days', (d.preferredDays || []).join(', ')); add('Session length', d.sessionLength ? d.sessionLength + ' min' : '');
+  add('Where they train', WHERE_LABEL[d.where] || d.where);
+  add('Equipment', (d.equipment || []).map(k => EQUIP_LABEL[k] || k).join(', ') + (d.otherEquipment ? ((d.equipment || []).length ? ', ' : '') + d.otherEquipment : ''));
+  add('Heaviest dumbbell (per hand)', d.dbMax !== '' && d.dbMax != null ? d.dbMax + ' ' + u : '');
+  add('Injuries / limitations', d.injuries); add('Exercises to avoid', d.avoid); add('Likes', d.preferred); add('Dislikes', d.disliked);
+  add('Cardio', d.cardio); add('Daily steps', d.steps); add('Sleep / schedule', d.sleep); add('Diet notes (coaching context, not medical)', d.diet); add('Anything else', d.other);
+  return L.join('\n');
+}
+
+// ---------- plan request -> prefilled GitHub issue (no token stored; the user submits it) ----------
+const REQ_TYPES = { gym: 'Gym', home: 'Home', travel: 'Travel', other: 'Other' };
+let reqDraft = null;
+function defaultReqType() { const w = (readIntake() || {}).where; if (w === 'home' || w === 'bodyweight') return 'home'; if (currentPlan && currentPlan.mode === 'home') return 'home'; return 'gym'; }
+function openRequest(o) {
+  reqDraft = { type: defaultReqType(), day: '', notes: '', starting: !!o.starting || !currentPlan };
+  renderRequest();
+}
+function renderRequest() {
+  const v = $('requestView'); if (!v) return;
+  const name = esc(activeProfileName());
+  const days = currentPlan && Array.isArray(currentPlan.days) ? currentPlan.days.map(d => d.key + ' – ' + (d.name || '')) : [];
+  v.innerHTML = `<div class="ik-card"><h3>${reqDraft.starting ? 'Request my starting plan' : 'Request a new plan'}</h3>
+    <div class="ik-field">For<div class="ik-locked">👤 ${name} <span class="prog-sub">(this phone's profile, can't be changed)</span></div></div>
+    <div class="q-label">Routine type</div><div class="pick-row">${Object.keys(REQ_TYPES).map(k => `<button type="button" class="pick${reqDraft.type === k ? ' on' : ''}" id="rq-${k}">${REQ_TYPES[k]}</button>`).join('')}</div>
+    ${txt('rqDay', 'Which routine or day is it about? (optional)', reqDraft.day, days[0] ? 'e.g. ' + days[0] : 'e.g. Tuesday legs', 'text', 'list="rqDays" autocomplete="off"')}
+    <datalist id="rqDays">${days.map(d => `<option value="${esc(d)}"></option>`).join('')}</datalist>
+    ${area('rqNotes', 'Goal or notes', reqDraft.notes, reqDraft.starting ? 'e.g. 3 days a week, want to get stronger and tone up' : 'e.g. make Tuesday harder, swap lunges, travel week Dec 2-6')}
+    <div class="req-note">🕗 ${esc(REQ_NOTE)}</div>
+    <div class="prog-sub" style="margin:6px 0">Opens GitHub with the request filled in (your intake${readHistory().length ? ' and last 2 weeks of training' : ''} included). Sign in and tap <b>Submit new issue</b>. Nothing is stored in the app and no GitHub key is saved.</div>
+    <div class="prog-sub" style="margin:6px 0">${esc(REQ_ACCESS_NOTE)}</div>
+    <div class="req-public">🔓 The Work Gym GitHub repo is public: anyone can read a request, including the intake answers in it (age, weight, injuries, diet notes). You can edit the text on GitHub before you tap Submit.</div>
+    <div class="ik-err" id="rqErr"></div>
+    <div class="ik-nav"><button type="button" class="btn-secondary" id="rqCancel">Cancel</button><button type="button" class="big btn-done" id="rqGo">Open GitHub issue</button></div></div>`;
+  v.classList.add('active');
+  Object.keys(REQ_TYPES).forEach(k => { $('rq-' + k).onclick = () => { reqDraft.day = iv('rqDay'); reqDraft.notes = iv('rqNotes'); reqDraft.type = k; renderRequest(); }; });
+  $('rqCancel').onclick = closeRequest;
+  $('rqGo').onclick = () => { reqDraft.day = iv('rqDay'); reqDraft.notes = iv('rqNotes'); submitRequest(reqDraft); };
+}
+function closeRequest() { const v = $('requestView'); if (v) { v.classList.remove('active'); v.innerHTML = ''; } }
+function topSet(sets) {
+  let best = null;
+  sets.forEach(s => {
+    if (!s) return;
+    const w = +s.weight || 0, r = +s.reps || 0;
+    if (!best || w > best.w || (w === best.w && r > best.r)) best = { w, r, timed: !!s.timed, rir: s.rir };
+  });
+  return best;
+}
+function recentTrainingLines(days) {
+  const from = addDays(todayLocal(), -((days || 14) - 1));
+  return readHistory().filter(h => { const d = h && localDay(h.date); return d && d >= from; }).map(h => {
+    const parts = groupSessionSets(h).map(g => { const b = topSet(g.sets); if (!b) return g.ex; return g.ex + ' ' + (b.timed ? b.r + 's' : (b.w > 0 ? b.w + 'x' + b.r : b.r + ' reps')) + (b.rir != null ? '@' + (b.rir >= 3 ? '3+' : b.rir) : '') + (g.sets.length > 1 ? ' (' + g.sets.length + ' sets)' : ''); });
+    return `- ${localDay(h.date)} ${h.day || 'Workout'}${h.duration != null ? ' (' + h.duration + ' min)' : ''}: ${parts.join('; ')}`;
+  });
+}
+function planRequestTitle(req, name) {
+  const t = (REQ_TYPES[req.type] || 'Gym').toLowerCase();
+  return `[Plan request] ${name} – ${t} ${req.starting ? 'starting plan' : 'plan'}${req.day ? ' (' + String(req.day).slice(0, 40) + ')' : ''}`;
+}
+function planRequestBody(req, o) {
+  o = o || {};
+  const name = activeProfileName(), intake = readIntake();
+  const L = [];
+  L.push('Profile: ' + name);
+  L.push('Profile-ID: ' + (activeProfile ? activeProfile.id : ''));
+  L.push('Request: ' + (req.starting ? 'starting plan' : 'new plan'));
+  L.push('Routine type: ' + (req.type || 'gym'));
+  L.push('Routine/day: ' + (req.day || '(not specified)'));
+  const it0 = intake || {};
+  L.push('Days/week: ' + (it0.daysPerWeek ? it0.daysPerWeek : '(not set)'));
+  L.push('Session length: ' + (it0.sessionLength ? it0.sessionLength + ' min' : '(not set)'));
+  L.push('Current plan: ' + (currentPlan ? planSummary(currentPlan).name + ' (' + currentPlan.days.map(d => d.key).join(', ') + ')' : 'none yet'));
+  L.push('Sent from: Work Gym v5 on ' + todayLocal());
+  L.push('', '> 🕗 ' + REQ_NOTE, '');
+  L.push('## Request', '', req.notes ? req.notes : '(no notes)', '');
+  L.push(`## Intake (${name})`, '');
+  if (intake) {
+    L.push(intakeReadable(intake).split('\n').map(x => '- ' + x).join('\n'), '');
+  } else L.push(profileHasBuiltins() ? '(No intake card on file; Adam\'s coaching notes apply.)' : '(No intake saved yet.)', '');
+  const lines = o.trainingLines || [];
+  if (lines.length) L.push('## Recent training (last 2 weeks, top sets)', '', lines.join('\n'), '');
+  if (o.trimmedNote) L.push(o.trimmedNote, '');
+  L.push('## Machine-readable', '', '```json', JSON.stringify({ profile: name, profileId: activeProfile ? activeProfile.id : '', request: { starting: !!req.starting, type: req.type, day: req.day || null, notes: req.notes || '' }, intake: intake || null, app: 'workgym-v5' }, null, o.compact ? 0 : 2), '```');
+  return L.join('\n');
+}
+function buildPlanRequestUrl(req) {
+  const name = activeProfileName();
+  const title = planRequestTitle(req, name);
+  const labels = 'plan-request,profile:' + name;
+  const mk = body => `https://github.com/${WG_REPO}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}&labels=${encodeURIComponent(labels)}&assignees=${encodeURIComponent(WG_ASSIGNEE)}`;
+  let lines = recentTrainingLines(14), trimmed = 0, compact = false;
+  let body = planRequestBody(req, { trainingLines: lines });
+  let url = mk(body);
+  // Too long for a GitHub URL: trim the training summary first (oldest sessions go first), then compact the JSON.
+  while (url.length > URL_MAX && lines.length) {
+    lines = lines.slice(0, -1); trimmed++;
+    body = planRequestBody(req, { trainingLines: lines, trimmedNote: `(${trimmed} older session${trimmed === 1 ? '' : 's'} left out to fit the link; use Send to Coach for the full log.)` });
+    url = mk(body);
+  }
+  if (url.length > URL_MAX) {
+    compact = true;
+    body = planRequestBody(req, { trainingLines: [], compact: true, trimmedNote: trimmed ? '(Training summary left out to fit the link.)' : '' });
+    url = mk(body);
+  }
+  if (url.length > URL_MAX) { // last resort: shorten the free-text notes
+    const r2 = Object.assign({}, req, { notes: String(req.notes || '').slice(0, 600) + ' …(shortened)' });
+    body = planRequestBody(r2, { trainingLines: [], compact: true, trimmedNote: '(Request text shortened to fit the link.)' });
+    url = mk(body);
+  }
+  return { url, title, body, labels: ['plan-request', 'profile:' + name], assignees: [WG_ASSIGNEE], trimmed, compact };
+}
+function submitRequest(req) {
+  if (!activeProfile) return null;
+  const r = buildPlanRequestUrl(req);
+  let w = null;
+  try { w = window.open(r.url, '_blank', 'noopener'); } catch (e) {}
+  showRequestSent(r, !!w);
+  return r;
+}
+function showRequestSent(r, opened) {
+  const v = $('requestView'); if (!v) return;
+  v.innerHTML = `<div class="ik-card"><h3>${opened ? 'GitHub opened' : 'Open GitHub to send it'}</h3>
+    <div class="prog-sub" style="margin-bottom:8px">${opened ? 'Your request is filled in on GitHub. Tap <b>Submit new issue</b> there to send it.' : 'Your browser blocked the new tab. Tap the button below, then <b>Submit new issue</b>.'}</div>
+    <a class="big btn-done ik-link" id="rqOpenAgain" href="${esc(r.url)}" target="_blank" rel="noopener">${opened ? 'Open GitHub again' : 'Open GitHub'}</a>
+    <div class="req-note">🕗 ${esc(REQ_NOTE)}</div>
+    <div class="prog-sub" style="margin-top:6px">Request for <b style="color:var(--text)">${esc(activeProfileName())}</b>: ${esc(r.title)}${r.trimmed ? ` (training summary shortened by ${r.trimmed} session${r.trimmed === 1 ? '' : 's'} to fit)` : ''}.</div>
+    <button type="button" class="btn-secondary" id="rqDone" style="width:100%">Done</button></div>`;
+  v.classList.add('active');
+  $('rqDone').onclick = closeRequest;
+}
+
+// ---------- invite link (text it to someone so their phone opens on the new-profile card) ----------
+function inviteUrl(name) { return WG_SITE + '?invite=new' + (name ? '&name=' + encodeURIComponent(cleanProfileName(name)) : ''); }
+async function shareInvite() {
+  const url = inviteUrl('');
+  const text = 'Set up Work Gym on your phone: ' + url;
+  try { if (navigator.share) { await navigator.share({ title: 'Work Gym', text: 'Set up Work Gym on your phone', url }); toast('Invite shared'); return 'shared'; } }
+  catch (e) { if (e && e.name === 'AbortError') return 'abort'; }
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); toast('Invite link copied'); return 'copied'; } } catch (e) {}
+  showCoachFallback(text);
+  return 'fallback';
+}
+
+// ---------- Settings > Reset this phone (typed confirm, backup first, then unbind) ----------
+async function resetThisPhone() {
+  if (!activeProfile) return 'none';
+  const name = activeProfileName();
+  const typed = prompt(`Reset this phone?\n\nThis phone is set up for ${name}. Resetting backs up ${name}'s data first, then unbinds the phone so the next launch shows the new-profile setup card.\n\nType RESET to continue.`);
+  if (typed == null || String(typed).trim().toUpperCase() !== 'RESET') { toast('Reset cancelled. Nothing changed.'); return 'cancel'; }
+  if (inWorkoutNow() && setWeights.length) { finishWorkout(); $('summary').classList.remove('active'); }
+  const how = await oneTapBackup();
+  if (how !== 'share' && how !== 'download') {
+    if (!confirm(`The backup did not finish (${how}). Reset anyway? ${name}'s data stays on this phone, but it won't show until you set up ${name} again.`)) { toast('Reset cancelled. Nothing changed.'); return 'cancel'; }
+  }
+  clearState();
+  localStorage.removeItem(WG5.DEVICE);
+  nsPrefix = null; // nothing else gets written for this profile on this page
+  try { location.replace(location.pathname); } catch (e) {}
+  return 'reset';
+}
+
+// ---------- first launch on a new phone: "I already have a profile" / "Set up a new profile" ----------
+// Known names come from profiles.json in the repo (served with the app) plus any profile already on this phone.
+let knownProfiles = null, welcomePick = null;
+async function loadKnownProfiles() {
+  let remote = [];
+  try {
+    const res = await fetch('profiles.json', { cache: 'no-cache' });
+    if (res && res.ok) { const j = JSON.parse(await res.text()); remote = Array.isArray(j) ? j : (Array.isArray(j && j.profiles) ? j.profiles : []); }
+  } catch (e) {}
+  const seen = new Map();
+  remote.concat(readProfiles()).forEach(p => {
+    const name = cleanProfileName(p && p.name); if (!name) return;
+    const id = slugProfile(name), prev = seen.get(id) || {};
+    seen.set(id, Object.assign({ id, name }, prev, { plan: (p && p.plan) || prev.plan || null }));
+  });
+  knownProfiles = Array.from(seen.values());
+  return knownProfiles;
+}
+function showWelcome() {
+  const v = $('welcomeView'); if (!v) return;
+  v.innerHTML = `<div class="ik-card wl-card"><div class="wl-logo">🏋️</div><h3>Welcome to Work Gym</h3>
+    <div class="prog-sub" style="margin-bottom:14px">This phone will be set up for one person. After that it always opens as them, with no profile switching.</div>
+    <button type="button" class="big btn-done wl-btn" id="wlHave">I already have a profile</button>
+    <button type="button" class="big wl-btn wl-alt" id="wlNew">Set up a new profile</button></div>`;
+  v.classList.add('active');
+  $('wlHave').onclick = () => showHaveProfile();
+  $('wlNew').onclick = () => { closeWelcome(); openIntake({ mode: 'new' }); };
+}
+function closeWelcome() { const v = $('welcomeView'); if (v) { v.classList.remove('active'); v.innerHTML = ''; } }
+async function showHaveProfile() {
+  const v = $('welcomeView'); if (!v) return;
+  const render = list => {
+    v.innerHTML = `<div class="ik-card"><h3>Which profile is yours?</h3>
+      <div class="prog-sub" style="margin-bottom:8px">Pick your name. This phone will be locked to it.</div>
+      <div class="wl-list">${list === null ? '<div class="prog-sub">Loading profiles…</div>' : (list.length ? list.map(p => `<button type="button" class="wl-name" id="wlP-${esc(p.id)}">👤 ${esc(p.name)}</button>`).join('') : '<div class="prog-sub">No saved profiles found. Type your name below.</div>')}</div>
+      ${txt('wlName', 'Or type your name', '', 'e.g. Julie', 'text', 'maxlength="24" autocomplete="off"')}
+      <div class="ik-err" id="wlErr"></div>
+      <div class="ik-nav"><button type="button" class="btn-secondary" id="wlBack">Back</button><button type="button" class="big btn-done" id="wlGo">Continue</button></div></div>`;
+    v.classList.add('active');
+    (list || []).forEach(p => { const b = $('wlP-' + p.id); if (b) b.onclick = () => showContinueAs(p); });
+    $('wlBack').onclick = showWelcome;
+    $('wlGo').onclick = () => {
+      const name = cleanProfileName(iv('wlName'));
+      if (!name || !/^[A-Za-zÀ-ÿ]/.test(name)) { $('wlErr').textContent = 'Type your name (or tap it above).'; return; }
+      const hit = (knownProfiles || []).find(p => p.id === slugProfile(name));
+      showContinueAs(hit || { id: slugProfile(name), name, plan: null, typed: true });
+    };
+  };
+  render(knownProfiles);
+  if (!knownProfiles) render(await loadKnownProfiles());
+}
+let welcomeBackup = null;
+function showContinueAs(p) {
+  welcomePick = p; welcomeBackup = null;
+  const v = $('welcomeView'); if (!v) return;
+  const n = profileDataCount(p.id), name = esc(p.name);
+  v.innerHTML = `<div class="ik-card"><h3>Continue as ${name}</h3>
+    ${p.typed ? `<div class="prog-sub" style="margin-bottom:6px">"${name}" isn't in the saved profile list. If you're new, go back and choose <b>Set up a new profile</b> instead.</div>` : ''}
+    ${n ? `<div class="prog-sub" style="margin-bottom:6px">This phone already has ${n} workout${n === 1 ? '' : 's'} saved for ${name}.</div>` : ''}
+    <div class="q-label">Bring your data over (optional)</div>
+    <label class="wl-file">📂 Restore from a backup file<input type="file" id="wlFile" accept=".json,application/json"></label>
+    <div class="prog-sub" id="wlFileNote"></div>
+    ${p.plan ? `<button type="button" class="pick wl-opt" id="wlPlan">⬇ Load my latest plan from GitHub</button>` : '<div class="prog-sub">No plan for ' + name + ' on GitHub yet.</div>'}
+    <div class="ik-err" id="wlErr"></div>
+    <div class="ik-nav"><button type="button" class="btn-secondary" id="wlBack2">Back</button><button type="button" class="big btn-done" id="wlBind">${p.id === 'adam' || n ? 'Use this phone as ' + name : 'Continue'}</button></div></div>`;
+  v.classList.add('active');
+  $('wlBack2').onclick = () => showHaveProfile();
+  const f = $('wlFile');
+  if (f) f.onchange = () => {
+    const file = f.files && f.files[0]; if (!file) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      let data = null; try { data = JSON.parse(String(rd.result)); } catch (e) {}
+      if (!data || data.format !== 'workgym-export') { $('wlFileNote').textContent = 'That file is not a Work Gym backup.'; welcomeBackup = null; return; }
+      if (data.profile && !sameProfileName(data.profile, p.name)) { $('wlFileNote').textContent = `That backup is ${cleanProfileName(data.profile)}'s, not ${p.name}'s.`; welcomeBackup = null; return; }
+      welcomeBackup = data;
+      $('wlFileNote').textContent = `Backup ready: ${(data.history || []).length} workouts. It will be restored when you continue.`;
+    };
+    rd.readAsText(file);
+  };
+  if ($('wlPlan')) $('wlPlan').onclick = () => bindExisting(p, { plan: true });
+  $('wlBind').onclick = () => bindExisting(p, { backup: welcomeBackup });
+}
+// Binds this phone to an existing profile name, then optionally restores a backup or loads the latest repo plan.
+function bindExisting(p, o) {
+  o = o || {};
+  const name = cleanProfileName(p.name), id = slugProfile(name);
+  // A brand-new person (no data here, no backup, no plan) goes through the intake so the coach gets their info.
+  if (id !== 'adam' && !o.backup && !o.plan && !profileDataCount(id) && !localStorage.getItem(profileKeyPrefix(id) + INTAKE_KEY)) {
+    if (!confirm(`No saved data for ${name} on this phone yet. Fill in the quick intake now so your coach can build your plan?`)) return 'cancel';
+    closeWelcome(); openIntake({ mode: 'new', name }); return 'intake';
+  }
+  if (!confirm(`Set up this phone for ${name}? It will always open as ${name}. To change it later: Settings > This phone > Reset this phone.`)) return 'cancel';
+  const existing = readProfiles().find(x => x.id === id);
+  const prof = upsertProfile(Object.assign({}, existing || {}, { id, name, created: (existing && existing.created) || new Date().toISOString(), builtin: id === 'adam' }));
+  bindDevice(prof);
+  closeWelcome();
+  wgEnterProfile(prof);
+  if (o.backup) restoreBackup(o.backup);
+  if (o.plan && p.plan) importPlanFromUrl(p.plan);
+  return 'bound';
+}
+
+// ---------- Settings: training schedule (days/week + session length), saved with the intake ----------
+function scheduleCardHtml() {
+  const it = readIntake() || {};
+  return `<div class="prog-card"><h4>Training schedule</h4><div class="q-label">Days per week</div><div class="pick-row">${[2, 3, 4, 5, 6].map(n => `<button type="button" class="pick${+it.daysPerWeek === n ? ' on' : ''}" id="sDays-${n}">${n}</button>`).join('')}</div>
+    <div class="q-label">Session length</div><div class="pick-row">${[30, 45, 60, 75, 90].map(n => `<button type="button" class="pick${+it.sessionLength === n ? ' on' : ''}" id="sLen-${n}">${n} min</button>`).join('')}</div>
+    <div class="prog-sub" style="margin-top:6px">Sent with every plan request so your coach builds to fit.</div></div>`;
+}
+function setSchedule(patch) {
+  const it = Object.assign({}, readIntake() || { name: activeProfileName(), v: 5 }, patch, { scheduleUpdatedAt: new Date().toISOString() });
+  saveIntakeData(it);
+  const box = $('sSchedule'); if (box) { box.innerHTML = scheduleCardHtml(); bindSchedule(); }
+  toast('Schedule saved');
+}
+function bindSchedule() {
+  [2, 3, 4, 5, 6].forEach(n => { const b = $('sDays-' + n); if (b) b.onclick = () => setSchedule({ daysPerWeek: n }); });
+  [30, 45, 60, 75, 90].forEach(n => { const b = $('sLen-' + n); if (b) b.onclick = () => setSchedule({ sessionLength: n }); });
+}
+
+
 // Definition-focused total-body plans (muscle retention + fat loss while cutting from 215 toward 195-200).
 // Gym uses available equipment; Home is pure bodyweight.
 const gymPlan = {
@@ -491,13 +1156,13 @@ let swaps = {};        // v3: exIndex -> {name, reps} swapped just for today
 let lastPrefillKey = null;
 
 const $ = id => document.getElementById(id);
-const APP_VERSION = 4;
+const APP_VERSION = 5;
 const HISTORY_CAP = 500;
 const ALL_VIEWS = ['planView','exerciseList','importView','workoutView','summary','historyView','exportView','progressView','bodyView','reviewView','settingsView'];
 function hideViewsExcept(keep) { ALL_VIEWS.forEach(id => { if (id !== keep) $(id).classList.remove('active'); }); }
 function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function readHistory() {
-  try { const h = JSON.parse(localStorage.getItem('workGymHistory') || '[]'); return Array.isArray(h) ? h : []; }
+  try { const h = JSON.parse(PLS.getItem('workGymHistory') || '[]'); return Array.isArray(h) ? h : []; }
   catch(e) { return []; }
 }
 function clonePlan(p) { return JSON.parse(JSON.stringify(p)); }
@@ -563,35 +1228,34 @@ function parseMinReps(repsStr) {
 }
 
 function loadPlan() {
-  const savedMode = localStorage.getItem('workGymMode') || "gym";
+  const savedMode = PLS.getItem('workGymMode') || "gym";
   currentMode = savedMode;
-  const saved = localStorage.getItem('workGymPlan');
+  const saved = PLS.getItem('workGymPlan');
+  let parsed = null;
   if (saved) {
-    try { 
-      const parsed = JSON.parse(saved);
-      if (!parsed || !Array.isArray(parsed.days) || !parsed.days.length) throw new Error('no days');
-      currentPlan = parsed;
-      // v2 fix: keep the saved (possibly imported) plan; sync the mode to the plan instead of discarding it.
-      if (parsed.mode === 'gym' || parsed.mode === 'home') {
-        currentMode = parsed.mode;
-        localStorage.setItem('workGymMode', currentMode);
-      }
-    } catch(e) { 
-      currentPlan = currentMode === "gym" ? JSON.parse(JSON.stringify(gymPlan)) : JSON.parse(JSON.stringify(homePlan)); 
-    }
-  } else {
-    currentPlan = currentMode === "gym" ? JSON.parse(JSON.stringify(gymPlan)) : JSON.parse(JSON.stringify(homePlan));
+    try { parsed = JSON.parse(saved); if (!parsed || !Array.isArray(parsed.days) || !parsed.days.length) parsed = null; } catch(e) { parsed = null; }
   }
-  savePlan();
+  if (parsed) {
+    currentPlan = parsed;
+    // v2 fix: keep the saved (possibly imported) plan; sync the mode to the plan instead of discarding it.
+    if (parsed.mode === 'gym' || parsed.mode === 'home') { currentMode = parsed.mode; PLS.setItem('workGymMode', currentMode); }
+  } else if (profileHasBuiltins()) {
+    currentPlan = currentMode === "gym" ? JSON.parse(JSON.stringify(gymPlan)) : JSON.parse(JSON.stringify(homePlan));
+  } else {
+    currentPlan = null; // v5: a new profile has no plan until the coach sends one
+  }
+  if (currentPlan) savePlan();
   updateModeButtons();
   renderDayButtons();
+  renderStarter();
   checkResume();
 }
 
 function setMode(mode) {
+  if (!profileHasBuiltins()) return;
   if (!confirmOverwrite(mode === 'gym' ? 'built-in Gym plan' : 'built-in Home Bodyweight plan')) return;
   currentMode = mode;
-  localStorage.setItem('workGymMode', mode);
+  PLS.setItem('workGymMode', mode);
   currentPlan = builtinPlan(mode);
   currentPlan.source = 'builtin';
   savePlan();
@@ -606,7 +1270,7 @@ function updateModeButtons() {
   $('btnModeHome').classList.toggle('primary', currentMode === "home");
 }
 
-function savePlan() { localStorage.setItem('workGymPlan', JSON.stringify(currentPlan)); }
+function savePlan() { if (currentPlan) PLS.setItem('workGymPlan', JSON.stringify(currentPlan)); }
 
 function saveState() {
   const state = {
@@ -620,13 +1284,13 @@ function saveState() {
     adj: sessionAdj,
     inWorkout: $('workoutView').classList.contains('active') || $('restOverlay').classList.contains('active')
   };
-  localStorage.setItem('workGymState', JSON.stringify(state));
+  PLS.setItem('workGymState', JSON.stringify(state));
 }
 
-function clearState() { localStorage.removeItem('workGymState'); }
+function clearState() { PLS.removeItem('workGymState'); }
 
 function checkResume() {
-  const raw = localStorage.getItem('workGymState');
+  const raw = PLS.getItem('workGymState');
   if (!raw) return;
   try {
     const s = JSON.parse(raw);
@@ -653,6 +1317,7 @@ function checkResume() {
 }
 
 function generate2WeekPlan() {
+  if (!profileHasBuiltins()) return;
   if (!confirmOverwrite(currentMode === 'gym' ? 'built-in Gym plan' : 'built-in Home Bodyweight plan')) return;
   currentPlan = builtinPlan(currentMode);
   currentPlan.source = 'builtin';
@@ -665,7 +1330,7 @@ function generate2WeekPlan() {
 
 function renderDayButtons() {
   const sel = $('daySelector');
-  if (!currentPlan?.days) return;
+  if (!currentPlan?.days) { sel.innerHTML = ''; return; }
   sel.innerHTML = currentPlan.days.map(d => 
     `<button class="day-btn" data-key="${esc(d.key)}">${esc(d.key)}<br>${esc(d.type || '')}</button>`
   ).join('');
@@ -894,7 +1559,7 @@ function finishWorkout() {
     planGenerated: currentPlan.generated || null,
     ...v4SessionFields()
   });
-  localStorage.setItem('workGymHistory', JSON.stringify(history.slice(0, HISTORY_CAP)));
+  PLS.setItem('workGymHistory', JSON.stringify(history.slice(0, HISTORY_CAP)));
   clearState();
   swaps = {};
   $('restOverlay').classList.remove('active'); clearInterval(restInterval);
@@ -942,6 +1607,7 @@ function doImport() {
     const data = JSON.parse($('importText').value);
     if (data && data.format === 'workgym-export') { restoreBackup(data); return; }
     if (!data || !data.days) throw new Error();
+    const mm = planProfileMismatch(data); if (mm) { alert(mm); return; }
     applyImportedPlan(data);
     alert('Plan imported.');
   } catch { alert('Bad JSON – check format.'); }
@@ -1123,10 +1789,13 @@ function buildExport() {
     });
   });
   let state = null;
-  try { state = JSON.parse(localStorage.getItem('workGymState') || 'null'); } catch(e) {}
+  try { state = JSON.parse(PLS.getItem('workGymState') || 'null'); } catch(e) {}
   return {
     format: 'workgym-export',
     version: APP_VERSION,
+    profile: activeProfileName(),
+    profileId: activeProfile ? activeProfile.id : null,
+    intake: readIntake(),
     exportedAt: new Date().toISOString(),
     mode: currentMode,
     plan: currentPlan,
@@ -1139,10 +1808,10 @@ function buildExport() {
     bodyweight: readBodyweight(),
     lastBackup: readLastBackup(),
     nutrition: readNutrition(),
-    settings: (() => { try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) || "null"); } catch (e) { return null; } })()
+    settings: (() => { try { return JSON.parse(PLS.getItem(SETTINGS_KEY) || "null"); } catch (e) { return null; } })()
   };
 }
-function exportFileName() { return 'workgym-export-' + new Date().toISOString().slice(0,10) + '.json'; }
+function exportFileName() { return 'workgym-export-' + slugProfile(activeProfileName()) + '-' + new Date().toISOString().slice(0,10) + '.json'; }
 function exportStatus(msg) { $('exportStatus').textContent = msg; }
 function showExport() {
   $('exportText').value = JSON.stringify(buildExport(), null, 2);
@@ -1200,6 +1869,8 @@ async function copyExport() {
 }
 // Restore an export bundle (e.g. moving to a new phone/browser). Merges history without duplicates.
 function restoreBackup(data) {
+  if (data && data.profile && !sameProfileName(data.profile, activeProfileName())) { alert(`This backup is ${cleanProfileName(data.profile)}'s; this phone is set up for ${activeProfileName()}. Restore it on ${cleanProfileName(data.profile)}'s phone. Nothing was changed.`); return; }
+  if (data && data.plan) { const mm = planProfileMismatch(data.plan); if (mm) { alert(mm); return; } }
   const incoming = Array.isArray(data.history) ? data.history : [];
   const existing = readHistory();
   const seen = new Set(existing.map(h => h && h.date + '|' + h.day));
@@ -1209,14 +1880,15 @@ function restoreBackup(data) {
   const bwHave = readBodyweight(), bwDates = new Set(bwHave.map(e => e.date));
   const bwAdd = (Array.isArray(data.bodyweight) ? data.bodyweight : []).filter(e => e && /^\d{4}-\d\d-\d\d$/.test(e.date) && +e.lb > 0 && !bwDates.has(e.date) && (bwDates.add(e.date), true));
   const restorePlan = data.plan && Array.isArray(data.plan.days) && confirm('Also restore the plan from this backup? (Replaces the current plan.)');
-  if (!confirm(`Restore ${added} new workout(s)${bwAdd.length ? ` and ${bwAdd.length} bodyweight entr${bwAdd.length === 1 ? 'y' : 'ies'}` : ''} into history?`)) return;
-  localStorage.setItem('workGymHistory', JSON.stringify(merged.slice(0, HISTORY_CAP)));
+  if (!confirm(`Restore ${added} new workout(s)${bwAdd.length ? ` and ${bwAdd.length} bodyweight entr${bwAdd.length === 1 ? 'y' : 'ies'}` : ''} into ${activeProfileName()}'s history?`)) return;
+  if (data && data.intake && typeof data.intake === 'object' && !readIntake()) saveIntakeData(data.intake);
+  PLS.setItem('workGymHistory', JSON.stringify(merged.slice(0, HISTORY_CAP)));
   restoreNutrition(data);
-  if (bwAdd.length) localStorage.setItem(BW_KEY, JSON.stringify(bwHave.concat(bwAdd.map(e => ({ date: e.date, lb: +e.lb, at: e.at || null }))).sort((a, b) => a.date.localeCompare(b.date))));
+  if (bwAdd.length) PLS.setItem(BW_KEY, JSON.stringify(bwHave.concat(bwAdd.map(e => ({ date: e.date, lb: +e.lb, at: e.at || null }))).sort((a, b) => a.date.localeCompare(b.date))));
   if (restorePlan) {
     currentPlan = data.plan;
-    if (data.mode === 'gym' || data.mode === 'home') { currentMode = data.mode; localStorage.setItem('workGymMode', currentMode); }
-    savePlan(); updateModeButtons(); renderDayButtons(); clearState();
+    if (data.mode === 'gym' || data.mode === 'home') { currentMode = data.mode; PLS.setItem('workGymMode', currentMode); }
+    savePlan(); updateModeButtons(); renderDayButtons(); clearState(); renderStarter();
   }
   $('importView').classList.remove('active');
   renderBackupBanner();
@@ -1482,7 +2154,7 @@ function afterSwap() {
 
 // ---------- Bodyweight log ----------
 function readBodyweight() {
-  try { const a = JSON.parse(localStorage.getItem(BW_KEY) || '[]'); return Array.isArray(a) ? a.filter(e => e && /^\d{4}-\d\d-\d\d$/.test(e.date) && +e.lb > 0) : []; }
+  try { const a = JSON.parse(PLS.getItem(BW_KEY) || '[]'); return Array.isArray(a) ? a.filter(e => e && /^\d{4}-\d\d-\d\d$/.test(e.date) && +e.lb > 0) : []; }
   catch (e) { return []; }
 }
 function logBodyweight(lb, date) {
@@ -1492,10 +2164,10 @@ function logBodyweight(lb, date) {
   const a = readBodyweight().filter(e => e.date !== date);
   a.push({ date, lb: Math.round(lb * 10) / 10, at: new Date().toISOString() });
   a.sort((x, y) => x.date.localeCompare(y.date));
-  localStorage.setItem(BW_KEY, JSON.stringify(a));
+  PLS.setItem(BW_KEY, JSON.stringify(a));
   return true;
 }
-function deleteBodyweight(date) { localStorage.setItem(BW_KEY, JSON.stringify(readBodyweight().filter(e => e.date !== date))); }
+function deleteBodyweight(date) { PLS.setItem(BW_KEY, JSON.stringify(readBodyweight().filter(e => e.date !== date))); }
 
 // ---------- Charts (inline SVG, no libraries) ----------
 function svgChart(pts, o) {
@@ -1622,11 +2294,12 @@ function planSummary(data) {
   return { name, mode: data.mode || '', days: data.days.length, exercises: n, dayNames: data.days.map(d => d.name || d.key) };
 }
 function applyImportedPlan(data) {
+  const mm = planProfileMismatch(data); if (mm) { alert(mm); return false; }
   currentPlan = data;
   currentPlan.source = 'import';
   if (data.mode === 'gym' || data.mode === 'home') {
     currentMode = data.mode;
-    localStorage.setItem('workGymMode', currentMode);
+    PLS.setItem('workGymMode', currentMode);
     updateModeButtons();
   }
   swaps = {};
@@ -1634,6 +2307,8 @@ function applyImportedPlan(data) {
   renderDayButtons();
   $('importView').classList.remove('active');
   clearState();
+  renderStarter();
+  return true;
 }
 function importStatus(msg) { const s = $('importStatus'); if (s) s.textContent = msg; }
 async function importPlanFromUrl(raw) {
@@ -1653,10 +2328,12 @@ async function importPlanFromUrl(raw) {
   if (data && data.format === 'workgym-export') { restoreBackup(data); importStatus(''); return true; }
   const bad = validatePlan(data);
   if (bad) { importStatus('Not a Work Gym plan (' + bad + ').'); alert('That file is not a Work Gym plan (' + bad + '). Nothing was changed.'); return false; }
+  const mm = planProfileMismatch(data);
+  if (mm) { importStatus('This plan is for ' + cleanProfileName(data.profile) + '.'); alert(mm); return false; }
   const s = planSummary(data);
   const same = currentPlan && JSON.stringify(currentPlan.days) === JSON.stringify(data.days);
   const busy = inWorkoutNow() && setWeights.length;
-  const msg = `Import this plan?\n\n${s.name}\n${s.mode ? s.mode + ' • ' : ''}${s.days} days • ${s.exercises} exercises\n\n` + s.dayNames.map(n => '• ' + n).join('\n') +
+  const msg = `Import this plan into ${activeProfileName()}'s profile?\n\n${s.name}\n${s.mode ? s.mode + ' • ' : ''}${s.days} days • ${s.exercises} exercises\n\n` + s.dayNames.map(n => '• ' + n).join('\n') +
     (same ? '\n\n(This plan is already loaded — importing again just refreshes it.)' : '') +
     (busy ? '\n\nYour workout in progress will be saved to history first.' : '') +
     '\n\nYour history and weights are kept.';
@@ -1687,9 +2364,9 @@ async function checkPlanParam() {
 }
 
 // ---------- One-tap backup (share sheet -> Google Drive, or download) ----------
-function backupFileName() { return 'workgym-backup-' + todayLocal() + '.json'; }
-function readLastBackup() { try { const b = JSON.parse(localStorage.getItem(BACKUP_KEY) || 'null'); return b && b.at ? b : null; } catch (e) { return null; } }
-function markBackedUp(method) { localStorage.setItem(BACKUP_KEY, JSON.stringify({ at: new Date().toISOString(), method })); renderBackupBanner(); }
+function backupFileName() { return 'workgym-backup-' + slugProfile(activeProfileName()) + '-' + todayLocal() + '.json'; }
+function readLastBackup() { try { const b = JSON.parse(PLS.getItem(BACKUP_KEY) || 'null'); return b && b.at ? b : null; } catch (e) { return null; } }
+function markBackedUp(method) { PLS.setItem(BACKUP_KEY, JSON.stringify({ at: new Date().toISOString(), method })); renderBackupBanner(); }
 let backupLater = false;
 function renderBackupBanner() {
   const lb = readLastBackup(), n = readHistory().length;
@@ -1744,12 +2421,12 @@ function v3Init() {
 const NUTRI_KEY = 'workGymNutrition', SETTINGS_KEY = 'workGymSettings';
 const SET_DEFAULTS = { deloadWeeks: 5, proteinFloor: 130, proteinStretch: 160, carbMin: 40, carbMax: 80, goal1: 200, goal2: 195, restMode: 'plan', smallStep: 2.5 };
 function readSettings() {
-  let s = {}; try { s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') || {}; } catch (e) { s = {}; }
-  return Object.assign({}, SET_DEFAULTS, s);
+  let s = {}; try { s = JSON.parse(PLS.getItem(SETTINGS_KEY) || '{}') || {}; } catch (e) { s = {}; }
+  return Object.assign({}, SET_DEFAULTS, profileSettingDefaults(), s);
 }
 function saveSettings(patch) {
-  let s = {}; try { s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') || {}; } catch (e) {}
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(Object.assign(s, patch)));
+  let s = {}; try { s = JSON.parse(PLS.getItem(SETTINGS_KEY) || '{}') || {}; } catch (e) {}
+  PLS.setItem(SETTINGS_KEY, JSON.stringify(Object.assign(s, patch)));
 }
 function ymd(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
 function localDay(iso) { const d = new Date(iso); return isNaN(d) ? null : ymd(d); }
@@ -2050,7 +2727,7 @@ function saveCheckin() {
   h.checkin = { at: new Date().toISOString(), muscles, energy: g.energy, sleep: g.sleep, night: g.night, next, fatigue };
   if (notes) h.note = notes;
   if (ciPick.lastRir != null && h.sets && h.sets.length) h.sets[h.sets.length - 1].rir = ciPick.lastRir;
-  localStorage.setItem('workGymHistory', JSON.stringify(H));
+  PLS.setItem('workGymHistory', JSON.stringify(H));
   const txt = Object.keys(next).map(m => `${MUSCLE_LABEL[m]}: ${next[m] > 0 ? '+1 set' : next[m] < 0 ? '−1 set' : 'keep'}`).join(' • ');
   $('ciResult').textContent = txt ? 'Next time → ' + txt + (g.night && Object.values(next).every(v => v <= 0) ? ' (on nights: holding volume steady)' : '') : 'Saved.';
   $('ciSave').textContent = 'Saved ✓';
@@ -2128,7 +2805,7 @@ function renderDeloadBanner() {
 
 // ---------- Nutrition + weight trend + adaptive TDEE ----------
 function readNutrition() {
-  try { const a = JSON.parse(localStorage.getItem(NUTRI_KEY) || '[]'); return Array.isArray(a) ? a.filter(e => e && /^\d{4}-\d\d-\d\d$/.test(e.date)) : []; } catch (e) { return []; }
+  try { const a = JSON.parse(PLS.getItem(NUTRI_KEY) || '[]'); return Array.isArray(a) ? a.filter(e => e && /^\d{4}-\d\d-\d\d$/.test(e.date)) : []; } catch (e) { return []; }
 }
 function logNutrition(date, kcal, protein, carbs) {
   date = /^\d{4}-\d\d-\d\d$/.test(String(date || '')) ? date : todayLocal();
@@ -2139,7 +2816,7 @@ function logNutrition(date, kcal, protein, carbs) {
   const a = readNutrition(); const old = a.find(x => x.date === date) || {};
   const merged = { date, kcal: e.kcal != null ? e.kcal : old.kcal != null ? old.kcal : null, protein: e.protein != null ? e.protein : old.protein != null ? old.protein : null, carbs: e.carbs != null ? e.carbs : old.carbs != null ? old.carbs : null, at: new Date().toISOString() };
   const out = a.filter(x => x.date !== date); out.push(merged); out.sort((x, y) => x.date.localeCompare(y.date));
-  localStorage.setItem(NUTRI_KEY, JSON.stringify(out));
+  PLS.setItem(NUTRI_KEY, JSON.stringify(out));
   return true;
 }
 // Exponentially weighted trend (alpha 0.1/day, gaps handled), like Hacker's Diet / MacroFactor.
@@ -2229,10 +2906,10 @@ function showBody() {
   <div class="prog-card"><h4>Food today <span class="prog-sub">(quick totals, all optional)</span></h4>
     <div class="food-grid"><label>Calories<input type="number" inputmode="numeric" id="nKcal" placeholder="${today.kcal != null ? today.kcal : 'kcal'}"></label><label>Protein g<input type="number" inputmode="numeric" id="nProt" placeholder="${today.protein != null ? today.protein : 'g'}"></label><label>Carbs g<input type="number" inputmode="numeric" id="nCarb" placeholder="${today.carbs != null ? today.carbs : 'g'}"></label></div>
     <div class="bw-row"><input type="date" id="nDate" value="${t}"><button id="nSave">Save</button></div>
-    ${meter('Protein', today.protein, s.proteinFloor, s.proteinStretch, Math.max(200, s.proteinStretch + 30), 'g', 'protein')}
-    ${meter('Carbs', today.carbs, s.carbMin, s.carbMax, Math.max(120, s.carbMax + 30), 'g', 'carbs')}
+    ${macrosOn(s) ? meter('Protein', today.protein, s.proteinFloor, s.proteinStretch, Math.max(200, s.proteinStretch + 30), 'g', 'protein') : ''}
+    ${macrosOn(s) ? meter('Carbs', today.carbs, s.carbMin, s.carbMax, Math.max(120, s.carbMax + 30), 'g', 'carbs') : ''}
     <div class="prog-sub" style="margin-top:6px">Calories today: <b style="color:var(--text)">${today.kcal != null ? fmt0(today.kcal) : '—'}</b> • 7-day avg (${a7.n} day${a7.n === 1 ? '' : 's'} logged): ${a7.kcal != null ? fmt0(a7.kcal) + ' kcal' : '—'}, protein ${a7.protein != null ? a7.protein + ' g' : '—'}, carbs ${a7.carbs != null ? a7.carbs + ' g' : '—'}</div>
-    <div class="prog-sub">Protein floor ${s.proteinFloor} g / stretch ${s.proteinStretch} g • carbs ${s.carbMin}–${s.carbMax} g (your care team's range).</div>
+    ${macrosOn(s) ? `<div class="prog-sub">Protein floor ${s.proteinFloor} g / stretch ${s.proteinStretch} g • carbs ${s.carbMin}–${s.carbMax} g${profileHasBuiltins() ? " (your care team's range)" : ''}.</div>` : '<div class="prog-sub">No macro targets set for this profile. Your coach can add them in Settings.</div>'}
   </div>
   <div class="prog-card"><h4>Estimated maintenance (TDEE)</h4>
     ${est.ok ? `<div class="prog-big">≈ ${fmt0(est.tdee)} kcal/day</div><div class="prog-sub">From ${est.days} days of calories (avg ${fmt0(est.avg)}) and a weight change of ${est.change > 0 ? '+' : ''}${est.change} lb over ${est.span} days (best-fit line). Estimate only: it gets better the more days you log. Your care team's targets come first.</div>`
@@ -2303,12 +2980,13 @@ function buildSummary(days) {
   const H = readHistory().filter(h => { const d = h && localDay(h.date); return d && d >= from && d <= t; });
   const L = [];
   L.push(`WORK GYM SUMMARY ${shortDate(from)}–${shortDate(t)} (${days} days)`);
+  L.push('Profile: ' + activeProfileName());
   const mins = H.reduce((a, h) => a + (+h.duration || 0), 0);
   L.push(`Sessions: ${H.length}${H.length ? ` (avg ${Math.round(mins / H.length)} min)` : ''} • weeks in a row: ${trainingWeekStreak()} • deload: ${deloadActive() ? 'ON' : 'no'}`);
   const tr = weightTrend(), last = tr[tr.length - 1], rate = trendRate(tr);
   if (last) L.push(`Weight: trend ${last.trend.toFixed(1)} lb${rate != null ? ` (${rate > 0 ? '+' : ''}${rate.toFixed(1)} lb/wk)` : ''}, last weigh-in ${last.lb} on ${shortDate(last.date)}`);
   const a = avgNutrition(Math.min(days, 14));
-  if (a.n) L.push(`Food (${a.n} days logged): avg ${a.kcal != null ? fmt0(a.kcal) + ' kcal' : '—'} • protein ${a.protein != null ? a.protein + ' g' : '—'} (floor ${s.proteinFloor}/stretch ${s.proteinStretch}) • carbs ${a.carbs != null ? a.carbs + ' g' : '—'} (limit ${s.carbMin}-${s.carbMax})`);
+  if (a.n) L.push(`Food (${a.n} days logged): avg ${a.kcal != null ? fmt0(a.kcal) + ' kcal' : '—'} • protein ${a.protein != null ? a.protein + ' g' : '—'} ${macrosOn(s) ? `(floor ${s.proteinFloor}/stretch ${s.proteinStretch})` : ''} • carbs ${a.carbs != null ? a.carbs + ' g' : '—'} ${macrosOn(s) ? `(limit ${s.carbMin}-${s.carbMax})` : ''}`);
   const est = tdeeEstimate(); if (est.ok) L.push(`Est. maintenance: ~${fmt0(est.tdee)} kcal/day (estimate, ${est.days} days)`);
   const wk = weekKey(t), vNow = weekVolume(wk), vLast = weekVolume(addDays(wk, -7));
   L.push('Hard sets this wk/last wk: ' + MUSCLES.filter(m => vNow[m] || vLast[m]).map(m => `${MUSCLE_LABEL[m]} ${vNow[m]}/${vLast[m]}`).join(', '));
@@ -2340,21 +3018,25 @@ function showSettings() {
   <div class="prog-card"><h4>Goals</h4><div class="food-grid">${f('sGoal1', 'Goal 1 (lb)', s.goal1)}${f('sGoal2', 'Goal 2 (lb)', s.goal2)}</div>
     <div class="food-grid">${f('sPF', 'Protein floor g', s.proteinFloor)}${f('sPS', 'Protein stretch g', s.proteinStretch)}</div>
     <div class="food-grid">${f('sCMin', 'Carbs min g', s.carbMin)}${f('sCMax', 'Carbs max g', s.carbMax)}</div></div>
+  <div id="sSchedule"></div>
   <div class="prog-card"><h4>Training</h4>
     <div class="food-grid">${f('sDW', 'Offer a deload after N weeks', s.deloadWeeks)}${f('sSmall', 'Small-DB step (lb)', s.smallStep, 0.5)}</div>
     <div class="q-label">Rest timer</div><div class="pick-row"><button id="sRestPlan" class="pick${s.restMode !== 'auto' ? ' on' : ''}">Use plan rests</button><button id="sRestAuto" class="pick${s.restMode === 'auto' ? ' on' : ''}">Auto by exercise</button></div>
     <div class="prog-sub">Auto: heavy compounds 90 s, other compounds 60 s, isolation 45 s, core/holds 30 s.</div>
     <div class="q-label">Deload</div><div class="pick-row">${dl === 'week' ? '<button id="sDlEnd" class="pick">End deload week</button>' : dl === 'plan' ? '<span class="prog-sub">Your current plan is a deload block.</span>' : '<button id="sDlStart" class="pick">Start a deload week now</button>'}</div></div>
   <button class="big btn-done" id="sSave" style="width:100%">Save settings</button>
-  <button class="btn-secondary" id="closeSettings" style="width:100%">Close</button>`;
+  <button class="btn-secondary" id="closeSettings" style="width:100%">Close</button>
+  <details class="danger-zone"><summary>This phone</summary><div class="prog-sub">This phone is set up for <b style="color:var(--text)">${esc(activeProfileName())}</b>. Each phone has one profile, and there is no switching. Resetting backs up ${esc(activeProfileName())}'s data first, then unbinds the phone.</div><button class="reset-btn" id="sResetPhone">Reset this phone…</button></details>`;
   v.classList.add('active'); hideViewsExcept('settingsView');
+  $('sResetPhone').onclick = () => resetThisPhone();
+  $('sSchedule').innerHTML = scheduleCardHtml(); bindSchedule();
   let rest = s.restMode;
   $('sRestPlan').onclick = () => { rest = 'plan'; $('sRestPlan').classList.add('on'); $('sRestAuto').classList.remove('on'); };
   $('sRestAuto').onclick = () => { rest = 'auto'; $('sRestAuto').classList.add('on'); $('sRestPlan').classList.remove('on'); };
   if ($('sDlStart') && dl !== 'week' && dl !== 'plan') $('sDlStart').onclick = () => { startDeload(7); showSettings(); };
   if (dl === 'week') $('sDlEnd').onclick = () => { endDeload(); showSettings(); };
   $('sSave').onclick = () => {
-    const n = (id, d, lo, hi) => { const x = parseFloat($(id).value); return isFinite(x) && x >= lo && x <= hi ? x : d; };
+    const n = (id, d, lo, hi) => { const raw = String($(id).value == null ? '' : $(id).value).trim(); if (raw === '' && d == null) return null; const x = parseFloat(raw); return isFinite(x) && x >= lo && x <= hi ? x : d; };
     saveSettings({ goal1: n('sGoal1', s.goal1, 80, 600), goal2: n('sGoal2', s.goal2, 80, 600), proteinFloor: n('sPF', s.proteinFloor, 0, 400), proteinStretch: n('sPS', s.proteinStretch, 0, 400),
       carbMin: n('sCMin', s.carbMin, 0, 600), carbMax: n('sCMax', s.carbMax, 0, 600), deloadWeeks: Math.round(n('sDW', s.deloadWeeks, 2, 16)), smallStep: n('sSmall', s.smallStep, 0.5, 10), restMode: rest });
     toast('Settings saved'); renderDeloadBanner();
@@ -2379,7 +3061,7 @@ function setLabel(s) {
   return (w > 0 ? w + '×' : '') + (s.reps || 0) + (s.timed ? 's' : '') + rirText(s) + (s.pr ? ' 🏆' : '');
 }
 function writeHistory(H) {
-  localStorage.setItem('workGymHistory', JSON.stringify((H || []).slice(0, HISTORY_CAP)));
+  PLS.setItem('workGymHistory', JSON.stringify((H || []).slice(0, HISTORY_CAP)));
 }
 function historyChrono(H) {
   return (H || []).map((h, hi) => ({ h, hi, t: Date.parse(h && h.date) })).sort((a, b) => {
@@ -2611,9 +3293,9 @@ function restoreNutrition(data) {
   if (inc.length) {
     const have = readNutrition(), dates = new Set(have.map(n => n.date));
     const add = inc.filter(n => n && /^\d{4}-\d\d-\d\d$/.test(n.date) && !dates.has(n.date) && (dates.add(n.date), true));
-    if (add.length) { localStorage.setItem(NUTRI_KEY, JSON.stringify(have.concat(add).sort((a, b) => a.date.localeCompare(b.date)))); added = add.length; }
+    if (add.length) { PLS.setItem(NUTRI_KEY, JSON.stringify(have.concat(add).sort((a, b) => a.date.localeCompare(b.date)))); added = add.length; }
   }
-  if (data && data.settings && typeof data.settings === 'object' && !localStorage.getItem(SETTINGS_KEY)) localStorage.setItem(SETTINGS_KEY, JSON.stringify(data.settings));
+  if (data && data.settings && typeof data.settings === 'object' && !PLS.getItem(SETTINGS_KEY)) PLS.setItem(SETTINGS_KEY, JSON.stringify(data.settings));
   return added;
 }
 function exAt(i) { return applyAdj(exAtBase(i), i); }
@@ -2665,6 +3347,7 @@ function buildSessionShare(h, mins, opts) {
   const tags = [mode, dur].filter(Boolean).join(' • ');
   if (o.header !== false) {
     L.push('WORK GYM SESSION');
+    L.push('Profile: ' + activeProfileName());
     L.push(longDate(h && h.date));
     L.push(day + (tags ? ' • ' + tags : ''));
   } else {
@@ -2699,7 +3382,7 @@ function buildSessionShare(h, mins, opts) {
 function buildTodayShare(entries) {
   if (!entries || !entries.length) return '';
   if (entries.length === 1) return buildSessionShare(entries[0].h, entries[0].mins);
-  const L = ['WORK GYM SESSION', longDate(entries[0].h.date) + ' — ' + entries.length + ' workouts today', ''];
+  const L = ['WORK GYM SESSION', 'Profile: ' + activeProfileName(), longDate(entries[0].h.date) + ' — ' + entries.length + ' workouts today', ''];
   let hard = 0;
   entries.forEach((e, i) => {
     if (i) L.push('');
@@ -2850,6 +3533,7 @@ $('btnModeGym').onclick = () => setMode("gym");
 $('btnModeHome').onclick = () => setMode("home");
 $('btnImport').onclick = showImport;
 $('btnPlan').onclick = () => {
+  if (!currentPlan) { renderStarter(); toast('No plan yet. Request one under More.'); return; }
   $('planView').classList.add('active');
   const pnote = currentPlan.note || (currentPlan.block && currentPlan.block.note);
   $('planView').innerHTML = '<h3 style="margin:6px 0">2-Week Total Body Schedule</h3>' +
@@ -2915,10 +3599,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
-loadPlan();
-v3Init();
-v4Init();
-v42Init();
+wgBoot();
 </script>
 </body>
 </html>
