@@ -1,5 +1,14 @@
 # Work Gym changelog
 
+## v5.1 (2026-11-23): requests go to a private repo
+
+- Plan requests now open a new issue in the **private** repo **Adalderson/workgym-data** (https://github.com/Adalderson/workgym-data). It has the labels `plan-request`, `workout-log`, `profile:Adam` and `profile:Julie`, and its own `plan-request` issue template, assigned to Adalderson. The app still runs from the public workgym Pages site.
+- The request form's public-repo warning is replaced with: "🔒 Requests are private: they go to Adam's private GitHub repo (Adalderson/workgym-data), visible only to Adam, the coach and invited collaborators." The help text now says that, because the repo is private, the GitHub account filing must be a collaborator there or file from Adam's account. Otherwise GitHub shows "page not found".
+- `profiles.json` in the app repo now holds names only (`id`, `name`). The "load my latest plan from GitHub" option only appears if an entry has a `plan` path, so it's hidden now.
+- The public repo's issue template was removed. Its existing `plan-request` and `profile:*` labels are left in place but unused.
+- v5.1 has no workout-log posting and no GitHub token code. Any future workout-log or API feature must target Adalderson/workgym-data, with a token scoped to that repo only.
+- Footer v5.1, SW cache `workgym-v5.1`. The backup format stays 5. v5 is kept as downloads/workout-app-v5.html.
+
 ## v5 (2026-11-23): one profile per phone, plan requests, intake, invite link
 
 **One profile per phone.** The first launch on a phone binds it to one profile. After that, the app always opens as that person. There is no picker and no in-app switcher, so a workout can't be logged to the wrong person. The header shows the profile name as a read-only tag.
