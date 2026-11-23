@@ -435,7 +435,7 @@
   <div id="checkinBox"></div>
 </div>
 
-<footer>Gym or Home • Form cues included • Definition cut • State persists • v5.3 (goal hints • github sync • private requests • one profile per phone • plan requests • intake • send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
+<footer>Gym or Home • Form cues included • Definition cut • State persists • v5.3.1 (token paste fix • goal hints • github sync • private requests • one profile per phone • plan requests • intake • send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
 
 <script>
 // ======================= v5: one profile per phone =======================
@@ -447,7 +447,7 @@
 const WG5 = { REG: 'wg5Profiles', DEVICE: 'wg5Device', MIG: 'wg5Migrated', PREFIX: 'wg5:' };
 // v5.1: plan requests (and any workout logs) go to the PRIVATE data repo; the app itself stays on the public workgym Pages site.
 const WG_REPO = 'Adalderson/workgym-data', WG_ASSIGNEE = 'Adalderson', WG_SITE = 'https://adalderson.github.io/workgym/';
-const WG_VERSION = 'v5.3';
+const WG_VERSION = 'v5.3.1';
 const LEGACY_KEYS = ['workGymHistory', 'workGymMode', 'workGymPlan', 'workGymState', 'workGymBodyweight', 'workGymLastBackup', 'workGymNutrition', 'workGymSettings'];
 const INTAKE_KEY = 'workGymIntake';
 const REQ_NOTE = 'Plan requests are checked daily at 8 PM Eastern (ET), and usually picked up right away.';
@@ -1083,7 +1083,23 @@ function bindSchedule() {
 const GH_TOKEN_KEY = 'wg5GhToken', GH_API = 'https://api.github.com', SYNC_QUEUE_KEY = 'workGymSyncQueue';
 let syncRun = null, v52Installed = false;
 function setTimeout0(f) { try { return setTimeout(f, 0); } catch (e) { f(); } }
-function ghToken() { try { const t = localStorage.getItem(GH_TOKEN_KEY); return t && t.trim() ? t.trim() : null; } catch (e) { return null; } }
+// v5.3.1: pasted tokens on Android can carry spaces, line breaks, zero-width/invisible characters, quotes, a "Bearer " prefix
+// or a keyboard-capitalised "Github_pat_". Strip all of that; the token itself is never altered beyond its (always lowercase) prefix.
+const GH_TOKEN_PREFIXES = ['github_pat_', 'ghp_', 'gho_', 'ghu_'];
+function cleanToken(raw) {
+  let t = String(raw == null ? '' : raw).normalize ? String(raw == null ? '' : raw).normalize('NFKC') : String(raw == null ? '' : raw);
+  t = t.replace(/[\s\u00A0\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180E\u200B-\u200F\u202A-\u202E\u2060-\u206F\u3164\uFE00-\uFE0F\uFEFF\uFFA0\uFFF9-\uFFFB]/g, '');
+  try { t = t.replace(/\p{Cf}|\p{Cc}/gu, ''); } catch (e) {}
+  t = t.replace(/^["'`‘’“”<]+|["'`‘’“”>]+$/g, '');
+  t = t.replace(/^(authorization:)?(bearer|token)(?=(github_pat_|gh[pou]_))/i, '');
+  const m = t.match(/^(github_pat_|gh[pou]_)/i); if (m) t = m[1].toLowerCase() + t.slice(m[1].length);
+  return t;
+}
+function tokenFormat(t) {
+  if (!t) return 'empty';
+  return /^(github_pat_|gh[pou]_)[A-Za-z0-9_]{20,255}$/.test(t) ? 'known' : 'unknown';
+}
+function ghToken() { try { const t = cleanToken(localStorage.getItem(GH_TOKEN_KEY)); return t ? t : null; } catch (e) { return null; } }
 function ghTokenTail() { const t = ghToken(); return t ? t.slice(-4) : ''; }
 async function ghFetch(path, opts) {
   const t = ghToken(); if (!t) return { ok: false, status: 0, error: 'no token' };
@@ -1207,7 +1223,8 @@ function syncCardHtml() {
   const t = ghTokenTail();
   return `<div class="prog-card" id="syncCard"><h4>GitHub sync</h4>
     <div class="prog-sub" style="margin-bottom:6px">${t ? `Token saved on this phone: <b style="color:var(--text)">••••${esc(t)}</b>. Finished workouts post themselves to the private repo ${esc(WG_REPO)} as ${esc(activeProfileName())}, and plan requests send directly.` : `Optional. Add a token and each finished workout posts itself to the private repo ${esc(WG_REPO)} (no tapping Submit). Without one, nothing changes.`}</div>
-    ${t ? '' : `<label class="ik-field">Fine-grained token<input type="password" id="ghTok" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></label>
+    ${t ? '' : `<label class="ik-field">Fine-grained token<input type="password" id="ghTok" name="wg-gh-token" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="text" data-lpignore="true" data-1p-ignore placeholder="github_pat_…"></label>
+    <label class="prog-sub" style="display:flex;align-items:center;gap:6px;margin-top:4px"><input type="checkbox" id="ghShow"> Show what I pasted</label>
     <ol class="tok-steps">${TOKEN_STEPS.map(x => `<li>${esc(x)}</li>`).join('')}</ol>`}
     <div class="pick-row" style="margin-top:8px">${t ? '<button type="button" class="pick" id="ghTest">Test</button><button type="button" class="pick" id="ghSyncAll">Sync all unsynced history</button><button type="button" class="pick" id="ghRemove">Remove</button>' : '<button type="button" class="pick on" id="ghSave">Save</button>'}</div>
     <div class="prog-sub" id="ghStatus" style="margin-top:6px"></div>
@@ -1216,10 +1233,28 @@ function syncCardHtml() {
 function bindSyncCard() {
   const st = m => { if ($('ghStatus')) $('ghStatus').textContent = m; };
   const rerender = () => { const b = $('sSync'); if (b) { b.innerHTML = syncCardHtml(); bindSyncCard(); } };
+  // Android Chrome: paste, autofill and IME composition don't always fire the same events, so track every one of them
+  // and read the live field again at Save time (whichever is longer wins).
+  let draft = '';
+  const tok = $('ghTok');
+  if (tok) {
+    const grab = () => { const v = String(tok.value == null ? '' : tok.value); if (v || !draft) draft = v; };
+    ['input', 'change', 'keyup', 'blur', 'compositionend', 'animationstart'].forEach(ev => { try { tok.addEventListener(ev, grab); } catch (e) {} });
+    try { tok.addEventListener('paste', e => { const c = e && e.clipboardData && e.clipboardData.getData ? e.clipboardData.getData('text') : ''; if (c) draft = c; setTimeout(grab, 0); }); } catch (e) {}
+  }
+  if ($('ghShow') && tok) $('ghShow').onchange = () => { tok.type = $('ghShow').checked ? 'text' : 'password'; };
   if ($('ghSave')) $('ghSave').onclick = () => {
-    const v = String(($('ghTok') && $('ghTok').value) || '').trim();
-    if (!/^(github_pat_|ghp_)[A-Za-z0-9_]{20,}$/.test(v)) { st('That doesn\'t look like a GitHub token (starts with github_pat_).'); return; }
-    localStorage.setItem(GH_TOKEN_KEY, v); rerender(); toast('Token saved'); st('Saved. Tap Test to check it.');
+    try { if (tok && tok.blur) tok.blur(); } catch (e) {}
+    const live = String((tok && tok.value) || '');
+    const raw = cleanToken(live).length >= cleanToken(draft).length ? live : draft;
+    const v = cleanToken(raw);
+    const fmt = tokenFormat(v);
+    if (fmt === 'empty') { st('Nothing to save: the token field is empty (read ' + live.length + ' characters). Paste the token, then tap Save.'); return v; }
+    localStorage.setItem(GH_TOKEN_KEY, v); rerender(); toast('Token saved');
+    const fixed = raw.trim() !== v ? ' (removed spaces/hidden characters from the paste)' : '';
+    if (fmt === 'known') st('Saved' + fixed + '. Tap Test to check it.');
+    else st('Saved, but this doesn\'t look like a usual GitHub token (they start with github_pat_, ghp_, gho_ or ghu_). Tap Test: if it fails, tap Remove and paste it again.');
+    return v;
   };
   if ($('ghRemove')) $('ghRemove').onclick = () => { if (!confirm('Remove the GitHub token from this phone? Workouts will stop syncing (nothing already synced is affected).')) return; localStorage.removeItem(GH_TOKEN_KEY); rerender(); toast('Token removed'); };
   if ($('ghTest')) $('ghTest').onclick = async () => {

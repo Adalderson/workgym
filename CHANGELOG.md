@@ -1,5 +1,12 @@
 # Work Gym changelog
 
+## v5.3.1 (2026-11-23): GitHub token paste fix
+
+- Fixes "That doesn't look like a GitHub token" when saving a pasted token on Android. Save now strips spaces, line breaks, zero-width and other invisible characters, quotes and a "Bearer " prefix, and fixes a keyboard-capitalised "Github_pat_".
+- Accepts `github_pat_`, `ghp_`, `gho_` and `ghu_` tokens. Any other format is saved with a warning, and Test confirms whether it works.
+- Save reads the field reliably on Android Chrome: it tracks the input, change, paste, composition and blur events plus autofill, and uses the latest full value. A "Show what I pasted" checkbox lets you check the field.
+- Footer v5.3.1, SW cache `workgym-v5.3.1`. v5.3 is kept as downloads/workout-app-v5.3.html.
+
 ## v5.3 (2026-11-23): clearer goal names
 
 - In the intake Goals step, "Recomp" is now **"Lose fat + build muscle"**. The stored value is still `recomp`, so existing intakes and plan requests stay compatible. Plan requests now say "Goal: Lose fat + build muscle (recomp)".
