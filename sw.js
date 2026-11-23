@@ -1,6 +1,6 @@
-// Work Gym service worker (v3). Pages and plan JSON are network-first so updates show up on the next
+// Work Gym service worker (v4). Pages and plan JSON are network-first so updates show up on the next
 // online launch; icons/manifest are stale-while-revalidate. Works offline.
-const CACHE = 'workgym-v3';
+const CACHE = 'workgym-v4';
 const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 const SCOPE = new URL(self.registration ? self.registration.scope : './', self.location).pathname;
 self.addEventListener('install', e => {
