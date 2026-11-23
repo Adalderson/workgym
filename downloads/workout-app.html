@@ -233,6 +233,15 @@
   .edit-del { width:100%; min-height:56px; margin-top:10px; border:none; border-radius:12px; background:#3a1e1e; color:#ff8a8a; font-weight:800; font-size:0.95rem; }
   .rir-btns button.on { background:#163a32; box-shadow:inset 0 0 0 2px var(--accent); }
   .hist-item .hist-ex { margin-top:8px; }
+
+  /* ---------- v4.2 send to coach ---------- */
+  button.coach-send { display:block; width:100%; min-height:52px; margin-top:10px; border:none; border-radius:12px; background:var(--accent); color:#000; font-weight:800; font-size:0.95rem; touch-action:manipulation; cursor:pointer; }
+  #btnSendCoach { width:100%; }
+  .coach-share-view { display:none; position:fixed; inset:0; z-index:140; background:rgba(5,8,12,0.96); overflow-y:auto; padding:16px 14px 36px; }
+  .coach-share-view.active { display:block; }
+  .coach-share-card { background:var(--card); border-radius:14px; padding:16px 14px; }
+  .coach-share-card h3 { margin:0 0 8px; }
+  .coach-share-card input[type="number"] { width:100%; min-height:56px; margin:10px 0; padding:10px; border:none; border-radius:10px; background:#2a3545; color:var(--text); font-size:1.2rem; text-align:center; }
 </style>
 </head>
 <body>
@@ -260,6 +269,7 @@
   <button id="btnExport">Export</button>
   <button id="btnProgress">Progress</button>
   <button id="btnBackup" class="primary">Backup</button>
+  <button id="btnSendToday" class="primary">Send today to Coach</button>
   <button id="btnSettings">Settings</button>
 </div>
 <div id="backupStatus" class="backup-status"></div>
@@ -345,16 +355,18 @@
 <div id="swapView" class="swap-view"></div>
 <div id="readyView" class="ready-view"></div>
 <div id="editView" class="edit-view"></div>
+<div id="coachShareView" class="coach-share-view"></div>
 <div id="toast" class="toast"></div>
 
 <div id="summary" class="summary">
   <h2>Done!</h2>
   <p id="summaryText"></p>
-  <button class="big btn-done" id="backHome" style="margin-top:14px">Back</button>
+  <button class="big btn-done" id="btnSendCoach" style="margin-top:14px;width:100%">Send to Coach</button>
+  <button class="btn-secondary" id="backHome" style="width:100%;margin-top:8px">Back</button>
   <div id="checkinBox"></div>
 </div>
 
-<footer>Gym or Home • Form cues included • Definition cut • State persists • v4.1 (edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
+<footer>Gym or Home • Form cues included • Definition cut • State persists • v4.2 (send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
 
 <script>
 // Definition-focused total-body plans (muscle retention + fat loss while cutting from 215 toward 195-200).
@@ -2606,6 +2618,232 @@ function restoreNutrition(data) {
 }
 function exAt(i) { return applyAdj(exAtBase(i), i); }
 
+// ======================= v4.2: Send to Coach =======================
+// Additive only. Does not change storage keys, backup format, or exercise names.
+function isDumbbellEx(name) { return /dumbbell|\bdb\b/i.test(name || ''); }
+function hardSetCount(h) { return (h && Array.isArray(h.sets) ? h.sets : []).filter(s => s && (+s.reps || 0) > 0).length; }
+function longDate(v) {
+  const d = /^\d{4}-\d\d-\d\d$/.test(String(v)) ? new Date(v + 'T12:00:00') : new Date(v);
+  if (isNaN(d)) return '?';
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+}
+function sessionDurationMins(h) {
+  if (!h) return null;
+  const start = h.startedAt ? Date.parse(h.startedAt) : NaN;
+  const end = h.date ? Date.parse(h.date) : NaN;
+  if (!isNaN(start) && !isNaN(end) && end >= start) return Math.max(1, Math.round((end - start) / 60000));
+  const times = (Array.isArray(h.sets) ? h.sets : []).map(s => s && s.at ? Date.parse(s.at) : NaN).filter(t => !isNaN(t));
+  if (times.length >= 2) return Math.max(1, Math.round((Math.max.apply(null, times) - Math.min.apply(null, times)) / 60000));
+  if (h.duration != null && h.duration !== '' && isFinite(+h.duration) && +h.duration > 0) return Math.round(+h.duration);
+  return null;
+}
+function formatShareSet(s) {
+  if (!s) return '';
+  const rir = rirText(s);
+  const pr = s.pr ? ' 🏆' : '';
+  if (s.timed) return (s.reps || 0) + 's' + rir + pr;
+  const w = +s.weight || 0;
+  if (w > 0) return w + ' x ' + (s.reps || 0) + rir + pr;
+  return (s.reps || 0) + ' reps' + rir + pr;
+}
+function groupSessionSets(h) {
+  const groups = [];
+  (Array.isArray(h && h.sets) ? h.sets : []).forEach(s => {
+    if (!s) return;
+    let g = groups.find(x => x.ex === s.ex);
+    if (!g) { g = { ex: s.ex, sets: [] }; groups.push(g); }
+    g.sets.push(s);
+  });
+  return groups;
+}
+function buildSessionShare(h, mins, opts) {
+  const o = opts || {};
+  const L = [];
+  const mode = h && h.mode ? h.mode : '';
+  const dur = mins != null && mins !== '' ? mins + ' min' : '';
+  const day = (h && h.day) || 'Workout';
+  const tags = [mode, dur].filter(Boolean).join(' • ');
+  if (o.header !== false) {
+    L.push('WORK GYM SESSION');
+    L.push(longDate(h && h.date));
+    L.push(day + (tags ? ' • ' + tags : ''));
+  } else {
+    L.push('--- ' + day + (tags ? ' • ' + tags : '') + ' ---');
+  }
+  const hard = hardSetCount(h);
+  L.push('Hard sets: ' + hard);
+  const flags = [];
+  if (h && h.deload) flags.push('deload');
+  if (h && h.light) flags.push('light day');
+  if (flags.length) L.push('(' + flags.join(', ') + ')');
+  L.push('');
+  groupSessionSets(h).forEach(g => {
+    const swap = g.sets[0] && g.sets[0].swappedFrom ? ' (swapped for ' + g.sets[0].swappedFrom + ')' : '';
+    const perHand = isDumbbellEx(g.ex) ? ' (weight per hand)' : '';
+    L.push(g.ex + perHand + swap + ':');
+    g.sets.forEach(s => L.push('  ' + formatShareSet(s)));
+  });
+  const prs = (Array.isArray(h && h.sets) ? h.sets : []).filter(s => s && s.pr);
+  if (prs.length) {
+    L.push('');
+    L.push('PRs:');
+    prs.forEach(s => L.push('  ' + s.ex + ' ' + formatShareSet(s).replace(' 🏆', '')));
+  }
+  if (h && h.note) {
+    L.push('');
+    L.push('Notes:');
+    L.push('  ' + h.note);
+  }
+  return L.join('\n');
+}
+function buildTodayShare(entries) {
+  if (!entries || !entries.length) return '';
+  if (entries.length === 1) return buildSessionShare(entries[0].h, entries[0].mins);
+  const L = ['WORK GYM SESSION', longDate(entries[0].h.date) + ' — ' + entries.length + ' workouts today', ''];
+  let hard = 0;
+  entries.forEach((e, i) => {
+    if (i) L.push('');
+    L.push(buildSessionShare(e.h, e.mins, { header: false }));
+    hard += hardSetCount(e.h);
+  });
+  L.push('', "Today's hard sets: " + hard);
+  return L.join('\n');
+}
+function todaysSessions() {
+  const t = todayLocal();
+  return readHistory().map((h, hi) => ({ h, hi })).filter(x => x.h && localDay(x.h.date) === t);
+}
+function ensureCoachShareView() {
+  let v = $('coachShareView');
+  if (v) return v;
+  v = document.createElement('div');
+  v.id = 'coachShareView';
+  v.className = 'coach-share-view';
+  (document.body || { appendChild() { } }).appendChild(v);
+  return v;
+}
+function closeCoachShareView() {
+  const v = $('coachShareView');
+  if (v) v.classList.remove('active');
+}
+function promptCoachMinutes(cb, h) {
+  const v = ensureCoachShareView();
+  v.innerHTML = '<div class="coach-share-card"><h3>How many minutes?</h3>' +
+    '<div class="prog-sub">This session has no start or finish times' + (h && h.day ? ' (' + esc(h.day) + ')' : '') + '.</div>' +
+    '<input type="number" inputmode="numeric" id="coachMinsInput" min="1" max="300" step="1" placeholder="e.g. 60">' +
+    '<button class="big btn-done" id="coachMinsGo" style="width:100%">Send to Coach</button>' +
+    '<button class="btn-secondary" id="coachMinsCancel" style="width:100%">Cancel</button></div>';
+  v.classList.add('active');
+  const inp = $('coachMinsInput'); if (inp && inp.focus) inp.focus();
+  if ($('coachMinsGo')) $('coachMinsGo').onclick = () => {
+    const n = parseInt(inp && inp.value, 10);
+    if (!isFinite(n) || n < 1 || n > 300) { alert('Enter the session length in minutes.'); return; }
+    closeCoachShareView();
+    cb(n);
+  };
+  if ($('coachMinsCancel')) $('coachMinsCancel').onclick = closeCoachShareView;
+}
+function showCoachFallback(text) {
+  const v = ensureCoachShareView();
+  v.innerHTML = '<div class="coach-share-card"><h3>Send to Coach</h3>' +
+    '<div class="prog-sub">Select the text and copy it, then paste it to your coach.</div>' +
+    '<textarea id="coachShareText" style="height:220px">' + esc(text) + '</textarea>' +
+    '<button class="btn-secondary" id="coachShareClose" style="width:100%">Close</button></div>';
+  v.classList.add('active');
+  const ta = $('coachShareText');
+  try { if (ta) { if (ta.focus) ta.focus(); if (ta.select) ta.select(); } } catch (e) {}
+  if ($('coachShareClose')) $('coachShareClose').onclick = closeCoachShareView;
+}
+async function sendToCoach(text) {
+  if (!text) { toast('Nothing to send.'); return 'empty'; }
+  try {
+    if (navigator.share) {
+      await navigator.share({ text: text });
+      toast('Shared with your coach.');
+      return 'shared';
+    }
+  } catch (e) { if (e && e.name === 'AbortError') return 'abort'; }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      toast('Copied, paste it to your coach');
+      return 'copied';
+    }
+  } catch (e) {}
+  showCoachFallback(text);
+  try {
+    const ta = $('coachShareText');
+    if (ta) {
+      if (ta.removeAttribute) ta.removeAttribute('readonly');
+      if (ta.select) ta.select();
+      if (document.execCommand) document.execCommand('copy');
+    }
+  } catch (e) {}
+  return 'fallback';
+}
+function shareSessionToCoach(hi) {
+  const H = readHistory();
+  const h = H[hi];
+  if (!h) { toast('No workout to send.'); return Promise.resolve('empty'); }
+  const mins = sessionDurationMins(h);
+  if (mins == null) {
+    return new Promise(resolve => {
+      promptCoachMinutes(m => { resolve(sendToCoach(buildSessionShare(h, m))); }, h);
+    });
+  }
+  return sendToCoach(buildSessionShare(h, mins));
+}
+function shareTodayToCoach() {
+  const list = todaysSessions();
+  if (!list.length) { toast('No workouts logged today.'); return Promise.resolve('empty'); }
+  const acc = [];
+  return new Promise(resolve => {
+    const next = i => {
+      if (i >= list.length) {
+        resolve(sendToCoach(buildTodayShare(acc)));
+        return;
+      }
+      const mins = sessionDurationMins(list[i].h);
+      if (mins != null) { acc.push({ h: list[i].h, mins }); next(i + 1); return; }
+      promptCoachMinutes(m => { acc.push({ h: list[i].h, mins: m }); next(i + 1); }, list[i].h);
+    };
+    next(0);
+  });
+}
+function bindCoachSends() {
+  readHistory().forEach((h, hi) => {
+    const b = $('sendCoach-' + hi);
+    if (b) b.onclick = () => shareSessionToCoach(hi);
+  });
+}
+
+function sessionsHtml(limit) {
+  const H = readHistory();
+  if (!H.length) return '<div class="prog-sub">No workouts logged yet.</div>';
+  return H.slice(0, limit != null ? limit : H.length).map((h, hi) => {
+    const sets = Array.isArray(h && h.sets) ? h.sets : [];
+    const groups = [];
+    sets.forEach((s, si) => {
+      if (!s) return;
+      let g = groups.find(x => x.ex === s.ex);
+      if (!g) { g = { ex: s.ex, items: [] }; groups.push(g); }
+      g.items.push({ s, si });
+    });
+    const lines = groups.map(g => `<div class="hist-ex"><span style="color:var(--text)">${esc(g.ex)}</span>: ${g.items.map(({ s }) => (s.weight ? esc(s.weight) + "×" : "") + esc(s.reps) + (s.timed ? "s" : "")).join(", ")}<div class="set-btns">${g.items.map(({ s, si }) => `<button type="button" class="set-chip" id="edset-${hi}-${si}">${esc(setLabel(s).replace(' 🏆', ''))}${s.pr ? ' <span class="pr">🏆</span>' : ''}</button>`).join('')}</div></div>`).join('');
+    return `<div class="hist-item"><strong>${esc(shortDate(h.date))}</strong> – ${esc(h.day || '')} (${esc(h.duration != null ? h.duration : '?')} min)${lines || '<div class="hist-ex">No sets recorded</div>'}<button type="button" class="coach-send" id="sendCoach-${hi}">Send to Coach</button></div>`;
+  }).join('');
+}
+
+const _showReviewV41 = showReview;
+showReview = function() { _showReviewV41(); bindCoachSends(); };
+const _showHistoryV41 = showHistory;
+showHistory = function() { _showHistoryV41(); bindCoachSends(); };
+
+function v42Init() {
+  if ($('btnSendCoach')) $('btnSendCoach').onclick = () => shareSessionToCoach(0);
+  if ($('btnSendToday')) $('btnSendToday').onclick = () => shareTodayToCoach();
+}
+
 // Events
 $('btnGenerate').onclick = generate2WeekPlan;
 $('btnModeGym').onclick = () => setMode("gym");
@@ -2680,6 +2918,7 @@ if ('serviceWorker' in navigator) {
 loadPlan();
 v3Init();
 v4Init();
+v42Init();
 </script>
 </body>
 </html>
