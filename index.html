@@ -435,7 +435,7 @@
   <div id="checkinBox"></div>
 </div>
 
-<footer>Gym or Home • Form cues included • Definition cut • State persists • v5.3.2 (assign after create • token paste fix • goal hints • github sync • private requests • one profile per phone • plan requests • intake • send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
+<footer>Gym or Home • Form cues included • Definition cut • State persists • v5.3.3 (single-DB log • assign after create • token paste fix • goal hints • github sync • private requests • one profile per phone • plan requests • intake • send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
 
 <script>
 // ======================= v5: one profile per phone =======================
@@ -447,7 +447,7 @@
 const WG5 = { REG: 'wg5Profiles', DEVICE: 'wg5Device', MIG: 'wg5Migrated', PREFIX: 'wg5:' };
 // v5.1: plan requests (and any workout logs) go to the PRIVATE data repo; the app itself stays on the public workgym Pages site.
 const WG_REPO = 'Adalderson/workgym-data', WG_ASSIGNEE = 'Adalderson', WG_SITE = 'https://adalderson.github.io/workgym/';
-const WG_VERSION = 'v5.3.2';
+const WG_VERSION = 'v5.3.3';
 const LEGACY_KEYS = ['workGymHistory', 'workGymMode', 'workGymPlan', 'workGymState', 'workGymBodyweight', 'workGymLastBackup', 'workGymNutrition', 'workGymSettings'];
 const INTAKE_KEY = 'workGymIntake';
 const REQ_NOTE = 'Plan requests are checked daily at 8 PM Eastern (ET), and usually picked up right away.';
@@ -3242,7 +3242,7 @@ function showReview() {
     <div class="export-actions"><button class="primary" id="sumCopy">Copy summary</button><button id="sumShare">Share</button></div>
     <div class="export-status" id="sumStatus"></div>
     <textarea id="sumText" readonly style="height:160px"></textarea></div>
-  <div class="prog-card"><h4>Logged workouts</h4><div class="prog-sub">Tap a set to fix the weight, reps, or reps-left. PRs, estimated 1RM, and next-session targets update automatically. Dumbbell weights are per hand.</div>
+  <div class="prog-card"><h4>Logged workouts</h4><div class="prog-sub">Tap a set to fix the weight, reps, or reps-left. PRs, estimated 1RM, and next-session targets update automatically. Dumbbell weights are per hand, except Goblet Squat and Hip Thrust (one dumbbell).</div>
     ${sessionsHtml(12)}</div>
   <button class="btn-secondary" id="closeReview" style="width:100%">Close</button>`;
   v.classList.add('active'); hideViewsExcept('reviewView');
@@ -3435,13 +3435,14 @@ function openEditSet(hi, si, onClose) {
   const timed = !!rec.timed;
   const v = $('editView'); if (!v) return;
   const rirOn = n => (rec.rir === n || (n === 3 && rec.rir >= 3)) ? ' on' : '';
-  const db = /dumbbell|\bdb\b/i.test(rec.ex || '');
+  const db = isDumbbellEx(rec.ex || '');
+  const singleDb = isSingleDumbbellEx(rec.ex || '');
   v.innerHTML = `<h3 style="margin:6px 0 8px">Edit set</h3>
     <div class="prog-sub">${esc(shortDate(H[hi].date))} • ${esc(H[hi].day || '')}</div>
     <div class="ci-card">
       <h3>${esc(rec.ex)}</h3>
       <div class="prog-sub">Set ${esc(rec.set != null ? rec.set : si + 1)}${rec.pr ? ' • 🏆 currently flagged as a PR' : ''}</div>
-      ${db ? '<div class="prog-sub">Weight is per hand (lb).</div>' : ''}
+      ${db ? '<div class="prog-sub">Weight is per hand (lb).</div>' : (singleDb ? '<div class="prog-sub">Weight is the one dumbbell (lb), not per hand.</div>' : '')}
       <div class="food-grid" style="margin-top:10px">
         <label>Weight (lb)<input type="number" inputmode="decimal" id="edWeight" step="0.5" min="0" value="${timed ? '' : esc(rec.weight != null && rec.weight !== '' ? rec.weight : '')}" ${timed ? 'disabled' : ''}></label>
         <label>${timed ? 'Seconds' : 'Reps'}<input type="number" inputmode="numeric" id="edReps" step="1" min="0" value="${esc(rec.reps != null ? rec.reps : '')}"></label>
@@ -3581,7 +3582,17 @@ function exAt(i) { return applyAdj(exAtBase(i), i); }
 
 // ======================= v4.2: Send to Coach =======================
 // Additive only. Does not change storage keys, backup format, or exercise names.
-function isDumbbellEx(name) { return /dumbbell|\bdb\b/i.test(name || ''); }
+function isSingleDumbbellEx(name) {
+  const n = name || '';
+  if (/goblet squat/i.test(n)) return true;
+  if (/hip thrust/i.test(n) && /dumbbell|\bdb\b/i.test(n)) return true;
+  if (/glute bridge/i.test(n) && /dumbbell|\bdb\b/i.test(n)) return true;
+  return false;
+}
+function isDumbbellEx(name) {
+  if (isSingleDumbbellEx(name)) return false;
+  return /dumbbell|\bdb\b/i.test(name || '');
+}
 function hardSetCount(h) { return (h && Array.isArray(h.sets) ? h.sets : []).filter(s => s && (+s.reps || 0) > 0).length; }
 function longDate(v) {
   const d = /^\d{4}-\d\d-\d\d$/.test(String(v)) ? new Date(v + 'T12:00:00') : new Date(v);
@@ -3641,7 +3652,7 @@ function buildSessionShare(h, mins, opts) {
   L.push('');
   groupSessionSets(h).forEach(g => {
     const swap = g.sets[0] && g.sets[0].swappedFrom ? ' (swapped for ' + g.sets[0].swappedFrom + ')' : '';
-    const perHand = isDumbbellEx(g.ex) ? ' (weight per hand)' : '';
+    const perHand = isDumbbellEx(g.ex) ? ' (weight per hand)' : (isSingleDumbbellEx(g.ex) ? ' (weight is the one dumbbell)' : '');
     L.push(g.ex + perHand + swap + ':');
     g.sets.forEach(s => L.push('  ' + formatShareSet(s)));
   });

@@ -1,5 +1,12 @@
 # Work Gym changelog
 
+## v5.3.3 (2026-11-25): single-dumbbell logging
+
+- Goblet Squat and Hip Thrust (shoulders on bench + DB) are one dumbbell, not a pair. The app no longer labels them "weight per hand" in the edit-set screen or in Send to Coach. Those screens now say the weight is the one dumbbell.
+- The same exception covers a glute bridge with a DB on the hips (also one dumbbell). Paired dumbbell lifts are unchanged (still per hand).
+- Keep the exercise name exactly `Hip Thrust (shoulders on bench + DB)` (weight history is keyed by name). Sit on the floor with the upper back against the bench, roll the one DB from the thighs into the hip crease with a folded towel/pad, then plant the feet and drive.
+- Footer v5.3.3, SW cache `workgym-v5.3.3`. v5.3.2 is kept as downloads/workout-app-v5.3.2.html.
+
 ## v5.3.2 (2026-11-23): assign after create
 
 - With a GitHub token, workout logs and plan requests are now created without assignees. The app then assigns Adalderson in a separate call (`POST /issues/{n}/assignees`), so GitHub emits a real "assigned" event for the coach's wake-up.
