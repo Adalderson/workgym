@@ -435,7 +435,7 @@
   <div id="checkinBox"></div>
 </div>
 
-<footer>Gym or Home • Form cues included • Definition cut • State persists • v5.3.3 (single-DB log • assign after create • token paste fix • goal hints • github sync • private requests • one profile per phone • plan requests • intake • send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
+<footer>Gym or Home • Form cues included • Definition cut • State persists • v5.3.4 (diary food sync • single-DB log • assign after create • token paste fix • goal hints • github sync • private requests • one profile per phone • plan requests • intake • send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
 
 <script>
 // ======================= v5: one profile per phone =======================
@@ -447,7 +447,7 @@
 const WG5 = { REG: 'wg5Profiles', DEVICE: 'wg5Device', MIG: 'wg5Migrated', PREFIX: 'wg5:' };
 // v5.1: plan requests (and any workout logs) go to the PRIVATE data repo; the app itself stays on the public workgym Pages site.
 const WG_REPO = 'Adalderson/workgym-data', WG_ASSIGNEE = 'Adalderson', WG_SITE = 'https://adalderson.github.io/workgym/';
-const WG_VERSION = 'v5.3.3';
+const WG_VERSION = 'v5.3.4';
 const LEGACY_KEYS = ['workGymHistory', 'workGymMode', 'workGymPlan', 'workGymState', 'workGymBodyweight', 'workGymLastBackup', 'workGymNutrition', 'workGymSettings'];
 const INTAKE_KEY = 'workGymIntake';
 const REQ_NOTE = 'Plan requests are checked daily at 8 PM Eastern (ET), and usually picked up right away.';
@@ -563,7 +563,7 @@ function applyProfileChrome() {
 }
 function v5Init() {
   renderStarter();
-  if (ghToken()) processSyncQueue('open'); // retry anything queued from last time
+  if (ghToken()) { processSyncQueue('open'); pullNutrition('open'); } // retry queued logs + pull food totals
   if ($('btnRequestPlan')) $('btnRequestPlan').onclick = () => openRequest({});
   if ($('btnIntake')) $('btnIntake').onclick = () => openIntake({ mode: 'edit' });
   if ($('btnInvite')) $('btnInvite').onclick = shareInvite;
@@ -1078,7 +1078,7 @@ function bindSchedule() {
 }
 
 // ======================= v5.2: GitHub sync (silent auto-push of workout logs) =======================
-// Optional. A fine-grained token limited to Adalderson/workgym-data (Issues: read/write, Metadata: read) is stored on
+// Optional. A fine-grained token limited to Adalderson/workgym-data (Issues: read/write, Contents: read, Metadata: read) is stored on
 // this phone only (device-level localStorage, never in backups/exports). With no token, nothing here runs.
 const GH_TOKEN_KEY = 'wg5GhToken', GH_API = 'https://api.github.com', SYNC_QUEUE_KEY = 'workGymSyncQueue';
 let syncRun = null, v52Installed = false;
@@ -1104,16 +1104,20 @@ function ghTokenTail() { const t = ghToken(); return t ? t.slice(-4) : ''; }
 async function ghFetch(path, opts) {
   const t = ghToken(); if (!t) return { ok: false, status: 0, error: 'no token' };
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return { ok: false, status: 0, offline: true, error: 'offline' };
+  const headers = Object.assign({ 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + t, 'X-GitHub-Api-Version': '2022-11-28' }, (opts && opts.body) ? { 'Content-Type': 'application/json' } : {}, (opts && opts.headers) || {});
+  headers.Authorization = 'Bearer ' + t;
   let res;
   try {
-    res = await fetch(GH_API + path, Object.assign({ cache: 'no-store' }, opts || {}, { headers: Object.assign({ 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + t, 'X-GitHub-Api-Version': '2022-11-28' }, (opts && opts.body) ? { 'Content-Type': 'application/json' } : {}) }));
+    res = await fetch(GH_API + path, Object.assign({ cache: 'no-store' }, opts || {}, { headers }));
   } catch (e) { return { ok: false, status: 0, offline: true, error: 'network error' }; }
+  const etag = res && res.headers && typeof res.headers.get === 'function' ? (res.headers.get('ETag') || res.headers.get('etag')) : null;
+  if (res.status === 304) return { ok: true, status: 304, notModified: true, data: null, etag };
   let data = null; try { data = JSON.parse(await res.text()); } catch (e) {}
   if (!res.ok) {
     const msg = (data && data.message) || ('HTTP ' + res.status);
-    return { ok: false, status: res.status, error: res.status === 401 ? 'token rejected (401)' : res.status === 404 ? 'repo not found for this token (404)' : res.status === 403 ? 'not allowed (403): ' + msg : msg + ' (' + res.status + ')', data };
+    return { ok: false, status: res.status, error: res.status === 401 ? 'token rejected (401)' : res.status === 404 ? 'repo not found for this token (404)' : res.status === 403 ? 'not allowed (403): ' + msg : msg + ' (' + res.status + ')', data, etag };
   }
-  return { ok: true, status: res.status, data };
+  return { ok: true, status: res.status, data, etag };
 }
 // v5.3.2: create the issue WITHOUT assignees, then assign in a separate call so GitHub emits a real 'assigned'
 // event for the coach's wake-up trigger. Once the issue exists the post counts as done (never re-posted); a failed
@@ -1236,12 +1240,12 @@ function renderSyncChips() {
 const TOKEN_STEPS = ['On GitHub (signed in as Adalderson): Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.',
   'Name it "Work Gym phone", pick an expiration, Resource owner: Adalderson.',
   'Repository access: Only select repositories → Adalderson/workgym-data (nothing else).',
-  'Repository permissions: Issues → Read and write. Metadata → Read-only (added automatically). Leave everything else at No access.',
+  'Repository permissions: Issues → Read and write. Contents → Read-only. Metadata → Read-only (added automatically). Leave everything else at No access.',
   'Generate token, copy it, paste it here, tap Save, then Test.'];
 function syncCardHtml() {
   const t = ghTokenTail();
   return `<div class="prog-card" id="syncCard"><h4>GitHub sync</h4>
-    <div class="prog-sub" style="margin-bottom:6px">${t ? `Token saved on this phone: <b style="color:var(--text)">••••${esc(t)}</b>. Finished workouts post themselves to the private repo ${esc(WG_REPO)} as ${esc(activeProfileName())}, and plan requests send directly.` : `Optional. Add a token and each finished workout posts itself to the private repo ${esc(WG_REPO)} (no tapping Submit). Without one, nothing changes.`}</div>
+    <div class="prog-sub" style="margin-bottom:6px">${t ? `Token saved on this phone: <b style="color:var(--text)">••••${esc(t)}</b>. Finished workouts post themselves to the private repo ${esc(WG_REPO)} as ${esc(activeProfileName())}, plan requests send directly, and food totals from your coach appear in the Body tab.` : `Optional. Add a token and each finished workout posts itself to the private repo ${esc(WG_REPO)} (no tapping Submit). Without one, nothing changes.`}</div>
     ${t ? '' : `<label class="ik-field">Fine-grained token<input type="password" id="ghTok" name="wg-gh-token" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="text" data-lpignore="true" data-1p-ignore placeholder="github_pat_…"></label>
     <label class="prog-sub" style="display:flex;align-items:center;gap:6px;margin-top:4px"><input type="checkbox" id="ghShow"> Show what I pasted</label>
     <ol class="tok-steps">${TOKEN_STEPS.map(x => `<li>${esc(x)}</li>`).join('')}</ol>`}
@@ -1308,6 +1312,212 @@ function v52Install() {
   const _showHistory = showHistory;
   showHistory = function () { const r = _showHistory.apply(this, arguments); if ($('histSyncAll')) $('histSyncAll').onclick = () => syncAllUnsynced().then(() => showHistory()); return r; };
   if ($('btnHistory')) $('btnHistory').onclick = showHistory; // was bound to the unwrapped function at load
+  v534Install();
+}
+
+// ======================= v5.3.4: pull nightly food totals into the Body tab =======================
+// Reads nutrition/<profileId>.json from the private data repo (Contents: Read). Never writes the file.
+// Storage keys stay workGymNutrition / workGymBodyweight. Hand-typed Body-tab saves win; the diary can
+// offer "Update from diary" when it differs. Weigh-ins are added only on dates that don't already have one.
+const NUTRI_PULL_COOLDOWN_MS = 5 * 60 * 1000, NUTRI_PENDING_KEY = 'workGymNutritionPending';
+let nutriRun = null, nutriLastAt = 0, nutriLastSha = '', nutriLastEtag = '', nutri403Told = false, v534Installed = false;
+function resetNutritionPull() { nutriRun = null; nutriLastAt = 0; nutriLastSha = ''; nutriLastEtag = ''; nutri403Told = false; }
+function nutritionPath() {
+  const id = activeProfile && String(activeProfile.id || '');
+  if (!/^[A-Za-z0-9_-]{1,32}$/.test(id)) return null;
+  return `/repos/${WG_REPO}/contents/nutrition/${id}.json`;
+}
+function readNutritionPending() {
+  try { const o = JSON.parse(PLS.getItem(NUTRI_PENDING_KEY) || '{}'); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; } catch (e) { return {}; }
+}
+function writeNutritionPending(o) { PLS.setItem(NUTRI_PENDING_KEY, JSON.stringify(o || {})); }
+function nutriNum(v, max) { const n = parseFloat(v); if (!isFinite(n) || n < 0) return null; if (max != null && n > max) return null; return Math.round(n); }
+function nutriWeight(v) { const n = parseFloat(v); if (!(n >= 60 && n <= 700)) return null; return Math.round(n * 10) / 10; }
+function nutriFieldsDiffer(a, b) {
+  if (!a || !b) return true;
+  return ['kcal', 'protein', 'carbs'].some(k => (a[k] != null ? a[k] : null) !== (b[k] != null ? b[k] : null));
+}
+function normalizeDiaryEntry(raw) {
+  if (!raw || !/^\d{4}-\d\d-\d\d$/.test(String(raw.date || ''))) return null;
+  const e = { date: raw.date, kcal: nutriNum(raw.kcal, 8000), protein: nutriNum(raw.protein), carbs: nutriNum(raw.carbs), source: 'mynetdiary', at: raw.at || new Date().toISOString() };
+  const fat = nutriNum(raw.fat), fiber = nutriNum(raw.fiber);
+  if (fat != null) e.fat = fat;
+  if (fiber != null) e.fiber = fiber;
+  if (e.kcal == null && e.protein == null && e.carbs == null) return null;
+  const w = raw.weight != null ? nutriWeight(raw.weight) : (raw.lb != null ? nutriWeight(raw.lb) : null);
+  if (w != null) e._weight = w;
+  return e;
+}
+function diaryRow(e) {
+  const row = { date: e.date, kcal: e.kcal, protein: e.protein, carbs: e.carbs, source: 'mynetdiary', at: e.at || new Date().toISOString() };
+  if (e.fat != null) row.fat = e.fat;
+  if (e.fiber != null) row.fiber = e.fiber;
+  return row;
+}
+function decodeNutritionContents(data) {
+  if (!data || typeof data.content !== 'string') return null;
+  let text; try { text = atob(String(data.content).replace(/\s/g, '')); } catch (e) { return null; }
+  let json; try { json = JSON.parse(text); } catch (e) { return null; }
+  if (!json || json.format !== 'workgym-nutrition-v1' || !Array.isArray(json.entries)) return null;
+  if (json.profile) {
+    const pid = activeProfile && activeProfile.id, pname = activeProfileName();
+    if (json.profile !== pid && !sameProfileName(json.profile, pname)) return null;
+  }
+  return json;
+}
+function importWeighInIfMissing(date, lb) {
+  lb = nutriWeight(lb);
+  if (lb == null || !/^\d{4}-\d\d-\d\d$/.test(date)) return false;
+  if (readBodyweight().some(e => e.date === date)) return false;
+  return !!logBodyweight(lb, date);
+}
+function mergeNutritionFile(file) {
+  const out = { added: 0, updated: 0, filled: 0, pending: 0, weightAdded: 0 };
+  const entries = file && Array.isArray(file.entries) ? file.entries : [];
+  const have = readNutrition();
+  const byDate = {}; have.forEach(n => { if (n && n.date) byDate[n.date] = n; });
+  const rows = have.slice();
+  const pending = readNutritionPending();
+  entries.forEach(raw => {
+    const remote = normalizeDiaryEntry(raw); if (!remote) return;
+    const local = byDate[remote.date];
+    const w = remote._weight;
+    if (w != null && importWeighInIfMissing(remote.date, w)) out.weightAdded++;
+    if (!local) {
+      const row = diaryRow(remote);
+      rows.push(row); byDate[remote.date] = row; out.added++;
+      delete pending[remote.date];
+      return;
+    }
+    if (local.source === 'manual') {
+      let filled = false;
+      ['kcal', 'protein', 'carbs'].forEach(k => { if (local[k] == null && remote[k] != null) { local[k] = remote[k]; filled = true; } });
+      if (filled) { local.at = remote.at || new Date().toISOString(); out.filled++; }
+      if (nutriFieldsDiffer(local, remote)) { pending[remote.date] = diaryRow(remote); out.pending++; }
+      else delete pending[remote.date];
+      return;
+    }
+    // Diary-sourced rows, and older rows with no source (typed from coach totals), are updatable.
+    if (nutriFieldsDiffer(local, remote) || (local.source !== 'mynetdiary')) {
+      const row = diaryRow(remote);
+      const i = rows.findIndex(x => x && x.date === remote.date);
+      if (i >= 0) rows[i] = row; else rows.push(row);
+      byDate[remote.date] = row;
+      if (nutriFieldsDiffer(local, remote)) out.updated++;
+    }
+    delete pending[remote.date];
+  });
+  rows.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  PLS.setItem('workGymNutrition', JSON.stringify(rows));
+  writeNutritionPending(pending);
+  return out;
+}
+function acceptNutritionFromDiary(date) {
+  if (!/^\d{4}-\d\d-\d\d$/.test(String(date || ''))) return false;
+  const pending = readNutritionPending();
+  const remote = pending[date];
+  if (!remote) return false;
+  const have = readNutrition().filter(n => n.date !== date);
+  have.push(diaryRow(remote));
+  have.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  PLS.setItem('workGymNutrition', JSON.stringify(have));
+  delete pending[date];
+  writeNutritionPending(pending);
+  return true;
+}
+function injectNutritionPendingUi() {
+  const v = $('bodyView'); if (!v || !v.classList.contains('active')) return;
+  const pending = readNutritionPending();
+  const dates = Object.keys(pending).filter(d => /^\d{4}-\d\d-\d\d$/.test(d) && pending[d]).sort().reverse();
+  let box = $('nutriPending');
+  if (!dates.length) {
+    if (box && box.parentNode && box.parentNode.removeChild) box.parentNode.removeChild(box);
+    else if (box) box.innerHTML = '';
+    return;
+  }
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'nutriPending';
+    box.className = 'prog-card';
+    const close = $('closeBody');
+    if (close && close.parentNode && close.parentNode.insertBefore) close.parentNode.insertBefore(box, close);
+    else if (v.appendChild) v.appendChild(box);
+    else { v.innerHTML += '<div class="prog-card" id="nutriPending"></div>'; box = $('nutriPending'); }
+  }
+  if (!box) return;
+  box.innerHTML = '<h4>Update from diary</h4><div class="prog-sub">These days already have numbers you typed. The diary has different totals.</div>' + dates.map(d => {
+    const r = pending[d] || {};
+    return `<div class="bw-row" style="margin-top:8px"><span class="prog-sub">${esc(shortDate(d))}: ${r.kcal != null ? fmt0(r.kcal) + ' kcal' : '—'} • P ${r.protein != null ? r.protein : '—'} • C ${r.carbs != null ? r.carbs : '—'}</span><button type="button" class="pick" id="nutriAccept-${d}">Update from diary</button></div>`;
+  }).join('');
+  dates.forEach(d => { const b = $('nutriAccept-' + d); if (b) b.onclick = () => { if (acceptNutritionFromDiary(d)) { toast('Updated from diary'); showBody(); } }; });
+}
+function pullNutrition(why) {
+  if (!ghToken() || nsPrefix == null) return Promise.resolve({ skipped: true });
+  const path = nutritionPath();
+  if (!path) return Promise.resolve({ skipped: true });
+  if (nutriRun) return nutriRun;
+  const now = Date.now();
+  if (why !== 'force' && nutriLastAt && (now - nutriLastAt) < NUTRI_PULL_COOLDOWN_MS) return Promise.resolve({ skipped: true, cooldown: true });
+  nutriRun = (async () => {
+    try {
+      const opts = { method: 'GET' };
+      if (nutriLastEtag) opts.headers = { 'If-None-Match': nutriLastEtag };
+      const r = await ghFetch(path, opts);
+      if (r.status === 304 || (r.ok && r.data && r.data.sha && nutriLastSha && r.data.sha === nutriLastSha)) {
+        nutriLastAt = Date.now();
+        return { skipped: true, notModified: true };
+      }
+      if (r.status === 404) { nutriLastAt = Date.now(); return { skipped: true, missing: true }; }
+      if (r.status === 403) {
+        if (!nutri403Told) { nutri403Told = true; toast('Food sync needs Contents: Read-only on your Work Gym phone token. See Settings.'); }
+        return { skipped: true, forbidden: true };
+      }
+      if (!r.ok) return { skipped: true, error: r.error || ('HTTP ' + r.status) };
+      const file = decodeNutritionContents(r.data);
+      if (!file) return { skipped: true, invalid: true };
+      nutriLastSha = (r.data && r.data.sha) || '';
+      nutriLastEtag = r.etag || nutriLastSha;
+      nutriLastAt = Date.now();
+      const result = mergeNutritionFile(file);
+      if (result.added || result.updated || result.filled || result.weightAdded) {
+        const bits = [];
+        const days = (result.added || 0) + (result.updated || 0) + (result.filled || 0);
+        if (days) bits.push(days + ' day' + (days === 1 ? '' : 's') + ' from diary');
+        if (result.weightAdded) bits.push(result.weightAdded + ' weigh-in' + (result.weightAdded === 1 ? '' : 's'));
+        toast('Food log updated: ' + bits.join(', ') + '.');
+      }
+      return result;
+    } finally { nutriRun = null; }
+  })();
+  return nutriRun;
+}
+function v534Install() {
+  if (v534Installed) return; v534Installed = true;
+  const _logNutrition = logNutrition;
+  logNutrition = function (date, kcal, protein, carbs) {
+    const ok = _logNutrition.apply(this, arguments);
+    if (ok) {
+      const d = /^\d{4}-\d\d-\d\d$/.test(String(date || '')) ? date : todayLocal();
+      const a = readNutrition();
+      const row = a.find(x => x && x.date === d);
+      if (row) { row.source = 'manual'; row.at = new Date().toISOString(); PLS.setItem('workGymNutrition', JSON.stringify(a)); }
+    }
+    return ok;
+  };
+  const _showBody = showBody;
+  showBody = function () {
+    const r = _showBody.apply(this, arguments);
+    injectNutritionPendingUi();
+    if (ghToken()) {
+      pullNutrition('body').then(res => {
+        if (!res || !$('bodyView') || !$('bodyView').classList.contains('active')) return;
+        if (res.added || res.updated || res.filled || res.weightAdded) { _showBody(); injectNutritionPendingUi(); }
+        else if (res.pending) injectNutritionPendingUi();
+      });
+    }
+    return r;
+  };
+  if ($('tabBody')) $('tabBody').onclick = () => { setTab('body'); showBody(); };
 }
 
 

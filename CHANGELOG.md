@@ -1,5 +1,15 @@
 # Work Gym changelog
 
+## v5.3.4 (2026-11-28): diary food totals in the Body tab
+
+- With a GitHub token, the app pulls `nutrition/<profileId>.json` from the private **Adalderson/workgym-data** repo on launch and when you open the Body tab (5-minute cooldown, sha/ETag so it does not refetch constantly). It only fetches the phone's bound profile (Adam → `nutrition/adam.json`).
+- New days and diary-sourced rows are merged into the existing `workGymNutrition` key. Numbers you typed in the Body tab are not overwritten; if the diary differs, that day gets a one-tap **Update from diary** button. Older rows with no source (usually totals typed from the coach) are treated as updatable.
+- A weigh-in in the file is added only when that date has no `workGymBodyweight` entry. Existing weigh-ins are never changed. Storage key names and exercise weight-history keys are unchanged.
+- A 403 (token missing Contents: Read-only) toasts once and points at Settings. A missing file (404) is silent. Offline, or with no token, the Body tab works as before.
+- Settings token steps now include Contents → Read-only, still limited to Adalderson/workgym-data. Issues stay Read and write.
+- Footer v5.3.4, SW cache `workgym-v5.3.4`. v5.3.3 is kept as downloads/workout-app-v5.3.3.html.
+
+
 ## v5.3.3 (2026-11-25): single-dumbbell logging
 
 - Goblet Squat and Hip Thrust (shoulders on bench + DB) are one dumbbell, not a pair. The app no longer labels them "weight per hand" in the edit-set screen or in Send to Coach. Those screens now say the weight is the one dumbbell.
