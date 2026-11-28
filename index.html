@@ -435,7 +435,7 @@
   <div id="checkinBox"></div>
 </div>
 
-<footer>Gym or Home • Form cues included • Definition cut • State persists • v5.3.4 (diary food sync • single-DB log • assign after create • token paste fix • goal hints • github sync • private requests • one profile per phone • plan requests • intake • send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
+<footer>Gym or Home • Form cues included • Definition cut • State persists • v5.3.5 (30 min session • diary food sync • single-DB log • assign after create • token paste fix • goal hints • github sync • private requests • one profile per phone • plan requests • intake • send to coach • edit sets • reps-left • check-ins • trend & TDEE • deloads • PRs • review)</footer>
 
 <script>
 // ======================= v5: one profile per phone =======================
@@ -447,7 +447,7 @@
 const WG5 = { REG: 'wg5Profiles', DEVICE: 'wg5Device', MIG: 'wg5Migrated', PREFIX: 'wg5:' };
 // v5.1: plan requests (and any workout logs) go to the PRIVATE data repo; the app itself stays on the public workgym Pages site.
 const WG_REPO = 'Adalderson/workgym-data', WG_ASSIGNEE = 'Adalderson', WG_SITE = 'https://adalderson.github.io/workgym/';
-const WG_VERSION = 'v5.3.4';
+const WG_VERSION = 'v5.3.5';
 const LEGACY_KEYS = ['workGymHistory', 'workGymMode', 'workGymPlan', 'workGymState', 'workGymBodyweight', 'workGymLastBackup', 'workGymNutrition', 'workGymSettings'];
 const INTAKE_KEY = 'workGymIntake';
 const REQ_NOTE = 'Plan requests are checked daily at 8 PM Eastern (ET), and usually picked up right away.';
@@ -1313,6 +1313,7 @@ function v52Install() {
   showHistory = function () { const r = _showHistory.apply(this, arguments); if ($('histSyncAll')) $('histSyncAll').onclick = () => syncAllUnsynced().then(() => showHistory()); return r; };
   if ($('btnHistory')) $('btnHistory').onclick = showHistory; // was bound to the unwrapped function at load
   v534Install();
+  v535Install();
 }
 
 // ======================= v5.3.4: pull nightly food totals into the Body tab =======================
@@ -1518,6 +1519,212 @@ function v534Install() {
     return r;
   };
   if ($('tabBody')) $('tabBody').onclick = () => { setTab('body'); showBody(); };
+}
+
+// ======================= v5.3.5: one-tap 30 min session (current plan/day only) =======================
+// A small "30 min" button sits beside Start Workout. It trims today's loaded session for this workout
+// only: main compounds (flagged, else first 3), accessories/core dropped, sets capped, auto rest.
+// The saved plan is never changed. Skipped lifts are not logged, so they don't affect progression.
+let pendingShort = false, v535Installed = false;
+function isShortCore(ex) {
+  const n = String((ex && ex.name) || '').toLowerCase();
+  if (typeof muscleOf === 'function' && muscleOf(ex.name) === 'abs') return true;
+  return /(?:^| )(plank|dead bug|bird dog|hollow|crunch|knee raise|leg raise|woodchop|pallof|twist|rollout)/.test(' ' + n);
+}
+function isShortIsolation(ex) {
+  const n = String((ex && ex.name) || '').toLowerCase();
+  if (isShortCore(ex)) return true;
+  return /lateral raise|front raise|rear delt|\bfly\b|flye|tricep|kickback|bicep|hammer curl|leg curl|hamstring curl|face pull|frog pump|walkout|snow angel|superman|abduction|march/.test(n);
+}
+function isShortCompound(ex) {
+  const n = String((ex && ex.name) || '').toLowerCase();
+  if (isShortCore(ex) || /pallof|woodchop|face pull/.test(n)) return false;
+  return /press|push-?up|squat|wall sit|row|pulldown|pull-?up|chin-?up|deadlift|rdl|romanian|thrust|leg press|dip|step-?up|glute bridge|hip hinge/.test(n);
+}
+function isShortMainFlag(ex) {
+  return !!(ex && (ex.main === true || ex.role === 'main' || ex.priority === 'main' || ex.kind === 'main'));
+}
+function estimateShortMinutes(exs, sets) {
+  let secs = 3 * 60; // listed warm-up is 2–3 min
+  (exs || []).forEach((ex, i) => {
+    const t = (typeof timedInfo === 'function') ? timedInfo(ex) : null;
+    const work = (t && t.seconds) ? t.seconds + 5 : 45;
+    const rest = (typeof autoRest === 'function') ? autoRest(ex) : 60;
+    for (let s = 0; s < sets; s++) {
+      secs += work;
+      const last = i === exs.length - 1 && s === sets - 1;
+      if (!last) secs += rest;
+    }
+  });
+  return Math.ceil(secs / 60);
+}
+function trimForShort(day) {
+  const list = (day && Array.isArray(day.exercises)) ? day.exercises : [];
+  const trimmedFrom = list.map(e => e && e.name).filter(Boolean);
+  let keep = [];
+  if (list.some(isShortMainFlag)) {
+    list.forEach((ex, i) => { if (isShortMainFlag(ex)) keep.push(i); });
+  } else {
+    list.forEach((ex, i) => { if (isShortCompound(ex)) keep.push(i); });
+    keep = keep.slice(0, 3);
+    if (keep.length < 3) {
+      list.forEach((ex, i) => {
+        if (keep.length >= 3 || keep.indexOf(i) >= 0) return;
+        if (!isShortCore(ex) && !isShortIsolation(ex)) keep.push(i);
+      });
+    }
+    if (!keep.length) list.forEach((ex, i) => { if (keep.length < 3 && !isShortCore(ex)) keep.push(i); });
+  }
+  keep = keep.filter((i, idx) => keep.indexOf(i) === idx).sort((a, b) => a - b);
+  const keptEx = keep.map(i => list[i]).filter(Boolean);
+  let sets = 3;
+  if (estimateShortMinutes(keptEx, 3) > 30) sets = 2;
+  return { keep, sets, trimmedFrom, keptNames: keptEx.map(e => e.name), minutes: estimateShortMinutes(keptEx, sets) };
+}
+function armShortSession() {
+  const day = typeof getCurrentDay === 'function' ? getCurrentDay() : null;
+  const trim = trimForShort(day);
+  pendingAdj = Object.assign({}, pendingAdj || {}, { short: true, keep: trim.keep.slice(), shortSets: trim.sets, trimmedFrom: trim.trimmedFrom.slice() });
+  return trim;
+}
+function clearShortPending() {
+  pendingShort = false;
+  if (pendingAdj) {
+    delete pendingAdj.short; delete pendingAdj.keep; delete pendingAdj.shortSets; delete pendingAdj.trimmedFrom;
+    if (!Object.keys(pendingAdj).length) pendingAdj = null;
+  }
+}
+function startShortSession() {
+  pendingShort = true;
+  armShortSession();
+  beginWorkout(false);
+}
+function injectShortStartStyle() {
+  if (typeof document === 'undefined' || !document.getElementById) return;
+  if ($('wgShortStyle')) return;
+  const el = document.createElement('style');
+  el.id = 'wgShortStyle';
+  el.textContent = '.start-row{display:flex;gap:8px;margin-top:6px;align-items:stretch}.start-row #startWorkout{margin-top:0;flex:1}#shortStart{flex:0 0 auto;min-width:4.5rem;padding:15px 12px;border:none;border-radius:12px;background:var(--card);color:var(--text);font-weight:700;font-size:0.9rem;cursor:pointer}';
+  const head = document.head || document.getElementsByTagName && document.getElementsByTagName('head')[0];
+  if (head && head.appendChild) head.appendChild(el);
+  else if (document.documentElement && document.documentElement.appendChild) document.documentElement.appendChild(el);
+}
+function mountShortBtn() {
+  const start = $('startWorkout'); if (!start) return;
+  injectShortStartStyle();
+  let btn = $('shortStart');
+  if (!btn || !btn.tagName) {
+    btn = document.createElement('button');
+    btn.id = 'shortStart';
+    btn.type = 'button';
+    btn.textContent = '30 min';
+    const parent = start.parentNode;
+    if (parent && parent.insertBefore && parent.appendChild) {
+      const row = document.createElement('div');
+      row.className = 'start-row';
+      parent.insertBefore(row, start);
+      row.appendChild(start);
+      row.appendChild(btn);
+    }
+  } else {
+    btn.textContent = '30 min';
+  }
+  start.onclick = () => { clearShortPending(); openReadiness(); };
+  if (btn) btn.onclick = ev => { if (ev && ev.stopPropagation) ev.stopPropagation(); pendingShort = true; armShortSession(); openReadiness(); };
+}
+function nextKeptIndex(from) {
+  const keep = sessionAdj && sessionAdj.keep;
+  if (!Array.isArray(keep)) return from + 1;
+  for (let i = 0; i < keep.length; i++) if (keep[i] > from) return keep[i];
+  return null;
+}
+function v535Install() {
+  if (v535Installed) return; v535Installed = true;
+  injectShortStartStyle();
+  const _selectDay = selectDay;
+  selectDay = function () { const r = _selectDay.apply(this, arguments); mountShortBtn(); return r; };
+  const _beginWorkout = beginWorkout;
+  beginWorkout = function (light) {
+    if (pendingShort) armShortSession();
+    else if (pendingAdj) { delete pendingAdj.short; delete pendingAdj.keep; delete pendingAdj.shortSets; delete pendingAdj.trimmedFrom; }
+    const r = _beginWorkout.apply(this, arguments);
+    pendingShort = false;
+    return r;
+  };
+  const _startExercise = startExercise;
+  startExercise = function (index) {
+    const adj = Object.assign({}, typeof autoAdj === 'function' ? autoAdj() : {}, pendingAdj || sessionAdj || {});
+    if (adj.short && Array.isArray(adj.keep) && adj.keep.length && adj.keep.indexOf(index) < 0) index = adj.keep[0];
+    return _startExercise.call(this, index);
+  };
+  const _applyAdj = applyAdj;
+  applyAdj = function (ex, i) {
+    let out = _applyAdj.apply(this, arguments);
+    if (sessionAdj && sessionAdj.short && sessionAdj.shortSets && out) {
+      const cap = sessionAdj.shortSets, sets = Math.min(+out.sets || 1, cap);
+      if (sets !== +out.sets) out = Object.assign({}, out, { sets, planSets: out.planSets || ex.sets });
+    }
+    return out;
+  };
+  const _restFor = restFor;
+  restFor = function (ex) {
+    if (sessionAdj && sessionAdj.short && typeof autoRest === 'function') return autoRest(ex);
+    return _restFor.apply(this, arguments);
+  };
+  const _completeSet = completeSet;
+  completeSet = function () {
+    const beforeEx = currentExIndex;
+    const r = _completeSet.apply(this, arguments);
+    if (!(sessionAdj && sessionAdj.short && Array.isArray(sessionAdj.keep))) return r;
+    if ($('summary') && $('summary').classList.contains('active')) return r;
+    if (sessionAdj.keep.indexOf(currentExIndex) >= 0) return r;
+    const next = nextKeptIndex(beforeEx);
+    if (next == null) { finishWorkout(); return r; }
+    currentExIndex = next; currentSet = 1;
+    const nx = exAt(currentExIndex);
+    currentReps = parseMinReps(nx.reps);
+    if (typeof updateWorkoutUI === 'function') updateWorkoutUI();
+    if (typeof startRest === 'function') startRest(restFor(nx));
+    saveState();
+    return r;
+  };
+  const _v4SessionFields = v4SessionFields;
+  v4SessionFields = function () {
+    const o = _v4SessionFields.apply(this, arguments) || {};
+    if (sessionAdj && sessionAdj.short) {
+      o.short = true;
+      if (Array.isArray(sessionAdj.trimmedFrom)) o.trimmedFrom = sessionAdj.trimmedFrom.slice();
+    }
+    return o;
+  };
+  const _lastSessionSets = lastSessionSets;
+  lastSessionSets = function (name, skipCurrent) {
+    const H = readHistory();
+    for (const h of H) {
+      if (h && h.short) continue;
+      const sets = (Array.isArray(h && h.sets) ? h.sets : []).filter(s => s && s.ex === name);
+      if (sets.length) return { date: h.date, sets };
+    }
+    return skipCurrent ? null : null;
+  };
+  const _buildSessionShare = buildSessionShare;
+  buildSessionShare = function (h, mins, opts) {
+    const text = _buildSessionShare.apply(this, arguments);
+    if (h && h.short && typeof text === 'string' && !/\b30 min version\b/.test(text) && !/\(30 min\)/.test(text)) {
+      return text.replace('Hard sets:', '30 min version\nHard sets:');
+    }
+    return text;
+  };
+  const _openReadiness = openReadiness;
+  openReadiness = function () {
+    const r = _openReadiness.apply(this, arguments);
+    const c = $('readyCancel');
+    if (c) {
+      const prev = c.onclick;
+      c.onclick = function () { clearShortPending(); if (typeof prev === 'function') return prev.apply(this, arguments); };
+    }
+    return r;
+  };
 }
 
 

@@ -1,5 +1,13 @@
 # Work Gym changelog
 
+## v5.3.5 (2026-11-28): 30 min session button
+
+- A small **30 min** button sits beside **Start Workout** on the day screen. One tap trims today's session from whatever plan is currently loaded (gym or home/bodyweight) — no extra screen, toggle, setting, or mode picker.
+- Trim: keep the day's main compound lifts (exercises flagged `main`/`role: main` if present, otherwise the first 3 compounds). Accessories, isolation and core are skipped. Kept lifts are capped at 3 sets, or 2 if that is what fits in about 30 minutes including the warm-up. Rest uses the existing auto-rest logic (compounds 60–90 s).
+- The saved plan is not changed, and the next session is a normal full day. Exercise names are unchanged. The history record gets `short: true` and `trimmedFrom` (the original lift list). Skipped lifts are not logged, and short sessions are ignored for progression hints so a shorter set count is not treated as a miss.
+- Footer v5.3.5, SW cache `workgym-v5.3.5`. v5.3.4 is kept as downloads/workout-app-v5.3.4.html.
+
+
 ## v5.3.4 (2026-11-28): diary food totals in the Body tab
 
 - With a GitHub token, the app pulls `nutrition/<profileId>.json` from the private **Adalderson/workgym-data** repo on launch and when you open the Body tab (5-minute cooldown, sha/ETag so it does not refetch constantly). It only fetches the phone's bound profile (Adam → `nutrition/adam.json`).
